@@ -11,6 +11,8 @@ import { Card } from "@/components/lms/ui/Card";
 import { ProgressBar } from "@/components/lms/ui/ProgressBar";
 import { RevealGroup, RevealItem, Reveal } from "@/components/motion/Reveal";
 import { GraduationCapIcon, CheckIcon, ClockIcon } from "@/components/ui/icons";
+import { BarChart } from "@/components/lms/charts/BarChart";
+import { PieChart } from "@/components/lms/charts/PieChart";
 
 type EnrollmentWithProgress = Enrollment & { progress: CourseProgress };
 
@@ -50,6 +52,7 @@ export default function StudentDashboardPage() {
   );
   const inProgress = inProgressCourses?.[0];
   const completedCount = enrollments?.filter((e) => e.progress.percent === 100).length ?? 0;
+  const notStartedCount = enrollments?.filter((e) => e.progress.percent === 0).length ?? 0;
 
   const statCards = [
     { value: enrollments?.length ?? "—", label: "Enrolled Courses", icon: GraduationCapIcon, accent: "bg-teal/10 text-teal" },
@@ -106,6 +109,40 @@ export default function StudentDashboardPage() {
             </Link>
           </div>
         </Reveal>
+      )}
+
+      {enrollments && enrollments.length > 0 && (
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <Reveal delay={0.1}>
+            <Card className="h-full">
+              <h2 className="font-bold text-ink">Course Status</h2>
+              <div className="mt-6">
+                <PieChart
+                  data={[
+                    { label: "Completed", value: completedCount, color: "#2cb1bc" },
+                    { label: "In Progress", value: inProgressCourses?.length ?? 0, color: "#eda100" },
+                    { label: "Not Started", value: notStartedCount, color: "#8b5cf6" },
+                  ]}
+                />
+              </div>
+            </Card>
+          </Reveal>
+          <Reveal delay={0.15}>
+            <Card className="h-full">
+              <h2 className="font-bold text-ink">Progress by Course</h2>
+              <div className="mt-6">
+                <BarChart
+                  color="var(--color-teal)"
+                  formatValue={(v) => `${v}%`}
+                  data={enrollments.map((e) => ({
+                    label: e.course.title,
+                    value: e.progress.percent,
+                  }))}
+                />
+              </div>
+            </Card>
+          </Reveal>
+        </div>
       )}
 
       <div className="mt-8">

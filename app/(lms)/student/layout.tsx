@@ -35,12 +35,13 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         onLogout={() => logout().then(() => router.push("/login"))}
       />
       <div className="flex flex-1 flex-col lg:flex-row">
-        <aside className="w-full shrink-0 border-b border-ink/10 bg-white px-4 py-4 lg:w-56 lg:border-r lg:border-b-0 lg:py-8">
-          <p className="hidden px-2 text-xs font-semibold tracking-[0.15em] text-ink/40 uppercase lg:block">
+        <aside className="w-full shrink-0 bg-gradient-to-b from-sage to-[#0f2a43] px-4 py-4 lg:w-56 lg:py-8">
+          <p className="hidden px-2 text-xs font-semibold tracking-[0.15em] text-white/40 uppercase lg:block">
             Student
           </p>
           <PortalSidebarNav
             layoutId="student-nav-active"
+            variant="dark"
             items={NAV_ITEMS}
             className="mt-0 flex gap-1 lg:mt-4 lg:flex-col lg:space-y-1"
           />

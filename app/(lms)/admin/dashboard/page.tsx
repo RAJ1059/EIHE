@@ -7,7 +7,9 @@ import { getAdminStatsOverview } from "@/lib/api/admin-stats";
 import { ApiError } from "@/lib/api/client";
 import type { LmsAdminStatsOverview } from "@/types/lms";
 import { Card } from "@/components/lms/ui/Card";
-import { RevealGroup, RevealItem } from "@/components/motion/Reveal";
+import { RevealGroup, RevealItem, Reveal } from "@/components/motion/Reveal";
+import { BarChart } from "@/components/lms/charts/BarChart";
+import { PieChart } from "@/components/lms/charts/PieChart";
 import {
   PeopleIcon,
   BriefcaseIcon,
@@ -16,6 +18,16 @@ import {
   ClockIcon,
   DocumentIcon,
 } from "@/components/ui/icons";
+
+// Validated categorical palette for course status (see dataviz skill):
+// teal (brand/live), amber (needs action), violet (neutral/draft), red
+// (inactive) — all pass the CVD + lightness + chroma checks together.
+const STATUS_COLORS = {
+  PUBLISHED: "#2cb1bc",
+  PENDING_REVIEW: "#eda100",
+  DRAFT: "#8b5cf6",
+  ARCHIVED: "#ef4444",
+} as const;
 
 const CARDS: {
   key: keyof LmsAdminStatsOverview;
@@ -84,6 +96,42 @@ export default function AdminDashboardPage() {
           </RevealItem>
         ))}
       </RevealGroup>
+
+      {stats && (
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <Reveal delay={0.1}>
+            <Card className="h-full">
+              <h2 className="font-bold text-ink">Courses by Status</h2>
+              <div className="mt-6">
+                <PieChart
+                  data={[
+                    { label: "Published", value: stats.publishedCourses, color: STATUS_COLORS.PUBLISHED },
+                    { label: "Pending Review", value: stats.pendingReviewCourses, color: STATUS_COLORS.PENDING_REVIEW },
+                    { label: "Draft", value: stats.draftCourses, color: STATUS_COLORS.DRAFT },
+                    { label: "Archived", value: stats.archivedCourses, color: STATUS_COLORS.ARCHIVED },
+                  ]}
+                />
+              </div>
+            </Card>
+          </Reveal>
+          <Reveal delay={0.15}>
+            <Card className="h-full">
+              <h2 className="font-bold text-ink">People &amp; Enrollments</h2>
+              <div className="mt-6">
+                <BarChart
+                  color="var(--color-teal)"
+                  data={[
+                    { label: "Students", value: stats.totalStudents },
+                    { label: "Instructors & Admins", value: stats.totalInstructors },
+                    { label: "Total Enrollments", value: stats.totalEnrollments },
+                    { label: "Active Enrollments", value: stats.activeEnrollments },
+                  ]}
+                />
+              </div>
+            </Card>
+          </Reveal>
+        </div>
+      )}
 
       {stats && stats.pendingReviewCourses > 0 && (
         <Card className="mt-6 flex items-center justify-between">

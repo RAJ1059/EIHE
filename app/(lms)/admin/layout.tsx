@@ -44,12 +44,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         onLogout={() => logout().then(() => router.push("/login"))}
       />
       <div className="flex flex-1">
-        <aside className="w-56 shrink-0 border-r border-ink/10 bg-white px-4 py-8">
-          <p className="px-2 text-xs font-semibold tracking-[0.15em] text-ink/40 uppercase">
+        <aside className="w-56 shrink-0 bg-gradient-to-b from-sage to-[#0f2a43] px-4 py-8">
+          <p className="px-2 text-xs font-semibold tracking-[0.15em] text-white/40 uppercase">
             Admin
           </p>
           <PortalSidebarNav
             layoutId="admin-nav-active"
+            variant="dark"
             items={NAV_ITEMS.filter((item) => !item.managementOnly || isManager)}
           />
         </aside>
