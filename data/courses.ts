@@ -4,6 +4,8 @@ export type Course = {
   image: string;
   href?: string;
   badgeImage?: string;
+  /** True for a course that's announced but not open yet — its dedicated page shows a "Coming Soon" status instead of enrollment. */
+  comingSoon?: boolean;
 };
 
 export type AudienceProgramPage = {
@@ -157,6 +159,8 @@ export const nursesProgram: AudienceProgramPage = {
       description:
         "We are currently developing a new suite of courses designed to help you advance your skills and reach your goals. New courses are coming soon. Keep an eye out for updates!",
       image: "/images/courses/course2.webp",
+      href: "/programs/nurses/new-courses-coming-soon",
+      comingSoon: true,
     },
   ],
 };
@@ -186,6 +190,8 @@ export const alliedProgram: AudienceProgramPage = {
       description:
         "We are currently developing a new suite of courses designed to help you advance your skills and reach your goals. New courses are coming soon. Keep an eye out for updates!",
       image: "/images/courses/course2.webp",
+      href: "/programs/allied-healthcare/new-courses-coming-soon",
+      comingSoon: true,
     },
   ],
 };
@@ -215,6 +221,18 @@ export const studentsProgram: AudienceProgramPage = {
       description:
         "We are currently developing a new suite of courses designed to help you advance your skills and reach your goals. New courses are coming soon. Keep an eye out for updates!",
       image: "/images/courses/course2.webp",
+      href: "/programs/students/new-courses-coming-soon",
+      comingSoon: true,
     },
   ],
+};
+
+// Keyed by the URL segment used under /programs/[audience]/..., so a course
+// detail page can resolve `audience` from the route back to its dataset.
+export const programsByAudience: Record<string, AudienceProgramPage> = {
+  doctors: doctorsProgram,
+  dentists: dentistsProgram,
+  nurses: nursesProgram,
+  "allied-healthcare": alliedProgram,
+  students: studentsProgram,
 };
