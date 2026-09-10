@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { listAdminCourses } from "@/lib/api/courses";
 import { ApiError } from "@/lib/api/client";
 import type { LmsCourse } from "@/types/lms";
+import { Reveal } from "@/components/motion/Reveal";
 
 const STATUS_STYLES: Record<LmsCourse["status"], string> = {
   DRAFT: "bg-ink/10 text-ink/60",
@@ -41,17 +43,19 @@ export default function AdminCoursesPage() {
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink">Courses</h1>
-        <Link
-          href="/admin/courses/create"
-          className="rounded-full bg-sage px-4 py-2 text-sm font-semibold text-white"
-        >
-          + New Course
-        </Link>
+        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+          <Link
+            href="/admin/courses/create"
+            className="inline-block rounded-full bg-sage px-4 py-2 text-sm font-semibold text-white"
+          >
+            + New Course
+          </Link>
+        </motion.div>
       </div>
 
       {error && <p className="mt-6 text-sm text-red-600">{error}</p>}
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-ink/10 bg-white">
+      <Reveal className="mt-6 overflow-hidden rounded-2xl border border-ink/10 bg-white">
         <table className="w-full text-left text-sm">
           <thead className="bg-cream text-xs font-semibold tracking-wide text-ink/60 uppercase">
             <tr>
@@ -80,11 +84,13 @@ export default function AdminCoursesPage() {
             )}
 
             {courses?.map((course) => (
-              <tr key={course._id}>
+              <tr key={course._id} className="transition-colors hover:bg-cream/60">
                 <td className="px-4 py-3 font-medium text-ink">{course.title}</td>
                 <td className="px-4 py-3">
                   <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[course.status]}`}
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[course.status]} ${
+                      course.status === "PENDING_REVIEW" ? "animate-pulse" : ""
+                    }`}
                   >
                     {course.status}
                   </span>
@@ -110,7 +116,7 @@ export default function AdminCoursesPage() {
             ))}
           </tbody>
         </table>
-      </div>
+      </Reveal>
     </div>
   );
 }

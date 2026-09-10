@@ -1,4 +1,7 @@
-import type { ButtonHTMLAttributes } from "react";
+"use client";
+
+import { motion, type HTMLMotionProps } from "framer-motion";
+import type { ReactNode } from "react";
 import { cn } from "./cn";
 
 type Variant = "primary" | "secondary" | "danger";
@@ -16,18 +19,24 @@ export function FormButton({
   children,
   disabled,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
+}: Omit<HTMLMotionProps<"button">, "children"> & {
   variant?: Variant;
   loading?: boolean;
+  children?: ReactNode;
 }) {
+  const isDisabled = disabled || loading;
+
   return (
-    <button
+    <motion.button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60",
         variants[variant],
         className,
       )}
-      disabled={disabled || loading}
+      disabled={isDisabled}
+      whileHover={isDisabled ? undefined : { scale: 1.03 }}
+      whileTap={isDisabled ? undefined : { scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 400, damping: 20 }}
       {...props}
     >
       {loading && (
@@ -37,6 +46,6 @@ export function FormButton({
         />
       )}
       {children}
-    </button>
+    </motion.button>
   );
 }

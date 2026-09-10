@@ -7,20 +7,31 @@ import { getAdminStatsOverview } from "@/lib/api/admin-stats";
 import { ApiError } from "@/lib/api/client";
 import type { LmsAdminStatsOverview } from "@/types/lms";
 import { Card } from "@/components/lms/ui/Card";
+import { RevealGroup, RevealItem } from "@/components/motion/Reveal";
+import {
+  PeopleIcon,
+  BriefcaseIcon,
+  GraduationCapIcon,
+  CheckIcon,
+  ClockIcon,
+  DocumentIcon,
+} from "@/components/ui/icons";
 
 const CARDS: {
   key: keyof LmsAdminStatsOverview;
   label: string;
   tag: string;
+  icon: typeof PeopleIcon;
+  accent: string;
 }[] = [
-  { key: "totalStudents", label: "Total Students", tag: "All time" },
-  { key: "newStudentsThisWeek", label: "New Students", tag: "Last 7 days" },
-  { key: "totalInstructors", label: "Instructors & Admins", tag: "Active" },
-  { key: "totalCourses", label: "Total Courses", tag: "All statuses" },
-  { key: "publishedCourses", label: "Published Courses", tag: "Live" },
-  { key: "pendingReviewCourses", label: "Pending Review", tag: "Needs approval" },
-  { key: "totalEnrollments", label: "Total Enrollments", tag: "All time" },
-  { key: "newEnrollmentsThisWeek", label: "New Enrollments", tag: "Last 7 days" },
+  { key: "totalStudents", label: "Total Students", tag: "All time", icon: PeopleIcon, accent: "bg-teal/10 text-teal" },
+  { key: "newStudentsThisWeek", label: "New Students", tag: "Last 7 days", icon: PeopleIcon, accent: "bg-sage/10 text-sage" },
+  { key: "totalInstructors", label: "Instructors & Admins", tag: "Active", icon: BriefcaseIcon, accent: "bg-purple-100 text-purple-600" },
+  { key: "totalCourses", label: "Total Courses", tag: "All statuses", icon: GraduationCapIcon, accent: "bg-teal/10 text-teal" },
+  { key: "publishedCourses", label: "Published Courses", tag: "Live", icon: CheckIcon, accent: "bg-green-100 text-green-700" },
+  { key: "pendingReviewCourses", label: "Pending Review", tag: "Needs approval", icon: ClockIcon, accent: "bg-amber-100 text-amber-700" },
+  { key: "totalEnrollments", label: "Total Enrollments", tag: "All time", icon: DocumentIcon, accent: "bg-sage/10 text-sage" },
+  { key: "newEnrollmentsThisWeek", label: "New Enrollments", tag: "Last 7 days", icon: DocumentIcon, accent: "bg-teal/10 text-teal" },
 ];
 
 export default function AdminDashboardPage() {
@@ -53,23 +64,26 @@ export default function AdminDashboardPage() {
 
       {error && <p className="mt-6 text-sm text-red-600">{error}</p>}
 
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <RevealGroup className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {CARDS.map((card) => (
-          <Card key={card.key}>
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold tracking-wide text-ink/40 uppercase">
+          <RevealItem key={card.key}>
+            <Card hoverable>
+              <div className={`inline-flex h-9 w-9 items-center justify-center rounded-full ${card.accent}`}>
+                <card.icon className="h-4 w-4" />
+              </div>
+              <p className="mt-3 text-xs font-semibold tracking-wide text-ink/40 uppercase">
                 {card.tag}
               </p>
-            </div>
-            <p className="mt-4 text-3xl font-extrabold text-ink">
-              {stats ? stats[card.key] : (
-                <span className="inline-block h-8 w-12 animate-pulse rounded bg-cream align-middle" />
-              )}
-            </p>
-            <p className="mt-1 text-sm text-ink/60">{card.label}</p>
-          </Card>
+              <p className="mt-1 text-3xl font-extrabold text-ink">
+                {stats ? stats[card.key] : (
+                  <span className="inline-block h-8 w-12 animate-pulse rounded bg-cream align-middle" />
+                )}
+              </p>
+              <p className="mt-1 text-sm text-ink/60">{card.label}</p>
+            </Card>
+          </RevealItem>
         ))}
-      </div>
+      </RevealGroup>
 
       {stats && stats.pendingReviewCourses > 0 && (
         <Card className="mt-6 flex items-center justify-between">
@@ -88,8 +102,8 @@ export default function AdminDashboardPage() {
 
       <Card className="mt-6">
         <p className="text-sm text-ink/70">
-          Revenue and payment analytics will appear here once the Razorpay checkout module is
-          built — not shown yet since there&rsquo;s no real payment data to report.
+          Revenue and payment analytics will appear here once real orders start coming through —
+          not shown yet since there&rsquo;s no live payment data to report.
         </p>
         <Link
           href="/admin/courses"

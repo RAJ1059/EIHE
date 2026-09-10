@@ -1,10 +1,22 @@
-import type { HTMLAttributes } from "react";
+"use client";
+
+import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "./cn";
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function Card({
+  className,
+  hoverable = false,
+  ...props
+}: HTMLMotionProps<"div"> & { hoverable?: boolean }) {
   return (
-    <div
-      className={cn("rounded-2xl border border-ink/5 bg-white p-6 shadow-sm", className)}
+    <motion.div
+      className={cn(
+        "rounded-2xl border border-ink/5 bg-white p-6 shadow-sm transition-shadow",
+        hoverable && "cursor-pointer hover:shadow-md",
+        className,
+      )}
+      whileHover={hoverable ? { y: -3 } : undefined}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
       {...props}
     />
   );

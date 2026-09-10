@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { PortalTopBar } from "@/components/lms/ui/PortalTopBar";
+import { PortalSidebarNav } from "@/components/lms/ui/PortalSidebarNav";
+import { PortalPageTransition } from "@/components/lms/ui/PortalPageTransition";
+import { PageLoader } from "@/components/lms/ui/PageLoader";
 
 const NAV_ITEMS = [
   { href: "/student/dashboard", label: "Dashboard" },
@@ -16,18 +18,13 @@ const NAV_ITEMS = [
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading && !user) router.replace("/login");
   }, [isLoading, user, router]);
 
   if (isLoading || !user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-cream">
-        <p className="text-sm text-ink/60">Checking access…</p>
-      </div>
-    );
+    return <PageLoader label="Checking access…" />;
   }
 
   return (
@@ -42,24 +39,15 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           <p className="hidden px-2 text-xs font-semibold tracking-[0.15em] text-ink/40 uppercase lg:block">
             Student
           </p>
-          <nav className="mt-0 flex gap-1 lg:mt-4 lg:flex-col lg:space-y-1">
-            {NAV_ITEMS.map((item) => {
-              const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`block rounded-lg px-3 py-2 text-sm font-medium ${
-                    active ? "bg-sage/10 text-sage" : "text-ink hover:bg-cream"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <PortalSidebarNav
+            layoutId="student-nav-active"
+            items={NAV_ITEMS}
+            className="mt-0 flex gap-1 lg:mt-4 lg:flex-col lg:space-y-1"
+          />
         </aside>
-        <div className="flex-1 px-6 py-8 lg:px-8">{children}</div>
+        <div className="flex-1 px-6 py-8 lg:px-8">
+          <PortalPageTransition>{children}</PortalPageTransition>
+        </div>
       </div>
     </div>
   );

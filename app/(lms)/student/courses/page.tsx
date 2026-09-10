@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { listMyEnrollments, type Enrollment } from "@/lib/api/enrollments";
 import { ApiError } from "@/lib/api/client";
+import { Card } from "@/components/lms/ui/Card";
+import { RevealGroup, RevealItem } from "@/components/motion/Reveal";
 
 export default function MyCoursesPage() {
   const { accessToken } = useAuth();
@@ -36,7 +38,7 @@ export default function MyCoursesPage() {
       )}
 
       {enrollments?.length === 0 && (
-        <div className="mt-6 rounded-2xl border border-ink/10 bg-white p-8 text-center">
+        <Card className="mt-6 text-center">
           <p className="text-ink/70">You haven&rsquo;t enrolled in any courses yet.</p>
           <Link
             href="/courses"
@@ -44,36 +46,35 @@ export default function MyCoursesPage() {
           >
             Browse courses →
           </Link>
-        </div>
+        </Card>
       )}
 
       {enrollments && enrollments.length > 0 && (
-        <div className="mt-6 space-y-4">
+        <RevealGroup className="mt-6 space-y-4">
           {enrollments.map((enrollment) => (
-            <div
-              key={enrollment._id}
-              className="flex items-center justify-between rounded-2xl border border-ink/10 bg-white p-5 transition-shadow hover:shadow-md"
-            >
-              <div>
-                <h3 className="font-bold text-sage">{enrollment.course.title}</h3>
-                <p className="mt-1 text-sm text-ink/60">
-                  Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="rounded-full bg-teal/15 px-3 py-1 text-xs font-semibold text-teal">
-                  {enrollment.status}
-                </span>
-                <Link
-                  href={`/student/courses/${enrollment.course.slug}`}
-                  className="text-sm font-semibold text-sage hover:underline"
-                >
-                  Continue →
-                </Link>
-              </div>
-            </div>
+            <RevealItem key={enrollment._id}>
+              <Card hoverable className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-sage">{enrollment.course.title}</h3>
+                  <p className="mt-1 text-sm text-ink/60">
+                    Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="rounded-full bg-teal/15 px-3 py-1 text-xs font-semibold text-teal">
+                    {enrollment.status}
+                  </span>
+                  <Link
+                    href={`/student/courses/${enrollment.course.slug}`}
+                    className="text-sm font-semibold text-sage hover:underline"
+                  >
+                    Continue →
+                  </Link>
+                </div>
+              </Card>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
       )}
     </div>
   );
