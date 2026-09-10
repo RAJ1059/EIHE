@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import {
   Enrollment,
   EnrollmentSource,
@@ -112,6 +112,40 @@ export class EnrollmentsService {
         if (enrollment) return enrollment;
       }
       throw new ConflictException("Could not enroll this student.");
+    }
+  }
+
+  /**
+   * Created only after a payment has been server-side signature-verified
+   * (see OrdersService.verifyPayment) — never call this off a bare
+   * "payment succeeded" claim from the frontend.
+   */
+  async enrollFromOrder(userId: string, courseId: string, orderId: Types.ObjectId) {
+    const existing = await this.enrollmentModel.findOne({ user: userId, course: courseId }).exec();
+    if (existing) {
+      existing.status = EnrollmentStatus.ACTIVE;
+      existing.orderId = orderId;
+      await existing.save();
+      return existing;
+    }
+
+    try {
+      return await this.enrollmentModel.create({
+        user: userId,
+        course: courseId,
+        orderId,
+        source: EnrollmentSource.ORDER,
+        status: EnrollmentStatus.ACTIVE,
+        enrolledAt: new Date(),
+      });
+    } catch (error) {
+      if (this.isDuplicateKeyError(error)) {
+        const enrollment = await this.enrollmentModel
+          .findOne({ user: userId, course: courseId })
+          .exec();
+        if (enrollment) return enrollment;
+      }
+      throw new ConflictException("Could not create this enrollment.");
     }
   }
 

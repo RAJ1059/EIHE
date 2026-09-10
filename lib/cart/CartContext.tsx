@@ -10,10 +10,9 @@ import {
   type ReactNode,
 } from "react";
 
-// There is no Cart/Order backend yet (payments land in a later phase), so
-// this is a real, working, but purely client-side pre-checkout cart backed
-// by localStorage — not a stand-in for a feature that doesn't exist yet.
-// Checkout itself is intentionally disabled until Razorpay is wired up.
+// Pre-checkout cart, backed by localStorage — deliberately client-side only
+// since it holds no server truth (price/ownership are re-validated by the
+// backend when the real Order is created at checkout).
 
 export type CartItem = {
   courseId: string;

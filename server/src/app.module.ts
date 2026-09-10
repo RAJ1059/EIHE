@@ -13,6 +13,7 @@ import { ModulesModule } from "./modules/modules/modules.module";
 import { LessonsModule } from "./modules/lessons/lessons.module";
 import { QuizzesModule } from "./modules/quizzes/quizzes.module";
 import { AdminStatsModule } from "./modules/admin-stats/admin-stats.module";
+import { OrdersModule } from "./modules/orders/orders.module";
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AdminStatsModule } from "./modules/admin-stats/admin-stats.module";
     LessonsModule,
     QuizzesModule,
     AdminStatsModule,
+    OrdersModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

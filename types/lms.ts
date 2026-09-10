@@ -259,6 +259,49 @@ export type LmsAdminStatsOverview = {
   newEnrollmentsThisWeek: number;
 };
 
+export type LmsOrderStatus = "PENDING" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED";
+
+export type LmsBillingInfo = {
+  name: string;
+  email: string;
+  phone: string;
+  country: string;
+  address: string;
+  city: string;
+  zip: string;
+};
+
+export type LmsOrderItem = {
+  course: string;
+  title: string;
+  price: number;
+};
+
+export type LmsOrder = {
+  _id: string;
+  user: string;
+  items: LmsOrderItem[];
+  billingInfo: LmsBillingInfo;
+  subtotal: number;
+  total: number;
+  currency: string;
+  status: LmsOrderStatus;
+  razorpayOrderId: string | null;
+  razorpayPaymentId: string | null;
+  paidAt: string | null;
+  failureReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LmsCreateOrderResult = {
+  orderId: string;
+  razorpayOrderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+};
+
 export type LmsPaginated<T> = {
   items: T[];
   pagination: {

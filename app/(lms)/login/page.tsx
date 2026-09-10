@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { homePathForRole } from "@/lib/auth/roles";
@@ -10,8 +10,25 @@ import { FormButton } from "@/components/lms/ui/FormButton";
 import { Input, Label, FieldError } from "@/components/lms/ui/Input";
 import { Card } from "@/components/lms/ui/Card";
 
+// Only ever follow an internal, single-segment-rooted path from ?next= —
+// never an absolute/protocol-relative URL, which would be an open redirect.
+function safeNextPath(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+}
+
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,7 +41,8 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       const loggedInUser = await login(email, password);
-      router.push(homePathForRole(loggedInUser.role));
+      const next = safeNextPath(searchParams.get("next"));
+      router.push(next ?? homePathForRole(loggedInUser.role));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
     } finally {

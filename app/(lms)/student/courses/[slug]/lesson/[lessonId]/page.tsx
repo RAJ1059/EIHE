@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { completeLesson, getCurriculum, getLesson } from "@/lib/api/lessons";
 import { ApiError } from "@/lib/api/client";
@@ -18,6 +19,7 @@ export default function LessonPlayerPage() {
   const [curriculum, setCurriculum] = useState<LmsCurriculum | null>(null);
   const [lesson, setLesson] = useState<LmsLesson | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [needsPurchase, setNeedsPurchase] = useState(false);
   const [completing, setCompleting] = useState(false);
 
   const loadCurriculum = useCallback(() => {
@@ -38,15 +40,13 @@ export default function LessonPlayerPage() {
         if (cancelled) return;
         setLesson(data);
         setError(null);
+        setNeedsPurchase(false);
       })
       .catch((err) => {
         if (cancelled) return;
         setLesson(null);
-        setError(
-          err instanceof ApiError
-            ? err.message
-            : "Could not load this lesson.",
-        );
+        setError(err instanceof ApiError ? err.message : "Could not load this lesson.");
+        setNeedsPurchase(err instanceof ApiError && err.errorCode === "LESSON_LOCKED_NOT_ENROLLED");
       });
 
     return () => {
@@ -81,7 +81,15 @@ export default function LessonPlayerPage() {
       <div className="min-w-0 flex-1">
         {error && (
           <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-700">
-            {error}
+            <p>{error}</p>
+            {needsPurchase && (
+              <Link
+                href={`/courses/${params.slug}`}
+                className="mt-3 inline-block font-semibold underline hover:no-underline"
+              >
+                View course →
+              </Link>
+            )}
           </div>
         )}
 

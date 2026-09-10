@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart/CartContext";
 
 export default function CartPage() {
+  const router = useRouter();
   const { items, removeItem, subtotal } = useCart();
+  const currency = items[0]?.currency ?? "USD";
 
   return (
     <section className="bg-cream">
@@ -58,19 +61,16 @@ export default function CartPage() {
             <div className="rounded-2xl border border-ink/10 bg-white p-6">
               <div className="flex items-center justify-between text-base font-bold text-ink">
                 <span>Subtotal</span>
-                <span>USD {subtotal}</span>
+                <span>
+                  {currency} {subtotal}
+                </span>
               </div>
               <button
-                disabled
-                title="Payments (Razorpay) are not built yet in this phase"
-                className="mt-4 w-full cursor-not-allowed rounded-full bg-ink/20 px-5 py-3 text-sm font-semibold text-ink/50"
+                onClick={() => router.push("/checkout")}
+                className="mt-4 w-full rounded-full bg-sage px-5 py-3 text-sm font-semibold text-white hover:opacity-90"
               >
-                Checkout — Coming Soon
+                Checkout
               </button>
-              <p className="mt-2 text-center text-xs text-ink/50">
-                Checkout requires the Razorpay payments module, which isn&rsquo;t built
-                yet in this phase.
-              </p>
             </div>
           </div>
         )}

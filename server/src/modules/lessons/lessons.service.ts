@@ -80,47 +80,59 @@ export class LessonsService {
   /**
    * Server-side lock check — never trust the client to only request this
    * after "watching" a previous lesson, or to only be enrolled because the
-   * UI hid a locked button.
+   * UI hid a locked button. Returns a specific reason so the frontend can
+   * show "purchase this course" vs. "finish the previous lesson first"
+   * instead of one generic locked message.
    */
-  async checkAccess(userId: string | null, lesson: LessonDocument): Promise<boolean> {
-    if (lesson.allowFreePreview) return true;
-    if (!userId) return false;
+  async getAccessReason(
+    userId: string | null,
+    lesson: LessonDocument,
+  ): Promise<"ok" | "not_enrolled" | "previous_required"> {
+    if (lesson.allowFreePreview) return "ok";
+    if (!userId) return "not_enrolled";
 
     const enrolled = await this.enrollmentsService.isEnrolled(userId, lesson.course.toString());
-    if (!enrolled) return false;
+    if (!enrolled) return "not_enrolled";
 
-    if (!lesson.requirePreviousLesson) return true;
+    if (!lesson.requirePreviousLesson) return "ok";
 
     const previous = await this.findPreviousLesson(lesson);
-    if (!previous) return true; // first lesson of the course — nothing to require
+    if (!previous) return "ok"; // first lesson of the course — nothing to require
 
     const completed = await this.lessonProgressModel
       .exists({ user: userId, lesson: previous._id })
       .exec();
-    return Boolean(completed);
+    return completed ? "ok" : "previous_required";
+  }
+
+  async checkAccess(userId: string | null, lesson: LessonDocument): Promise<boolean> {
+    return (await this.getAccessReason(userId, lesson)) === "ok";
+  }
+
+  private lockedException(reason: "not_enrolled" | "previous_required"): ForbiddenException {
+    if (reason === "not_enrolled") {
+      return new ForbiddenException({
+        message: "Purchase this course to access the learning content.",
+        error: "LESSON_LOCKED_NOT_ENROLLED",
+      });
+    }
+    return new ForbiddenException({
+      message: "Complete the previous lesson to unlock this one.",
+      error: "LESSON_LOCKED_SEQUENCE",
+    });
   }
 
   async getLessonForViewer(id: string, userId: string | null) {
     const lesson = await this.findByIdOrThrow(id);
-    const allowed = await this.checkAccess(userId, lesson);
-    if (!allowed) {
-      throw new ForbiddenException({
-        message: "This lesson is locked. Complete the previous lesson or enroll to continue.",
-        error: "LESSON_LOCKED",
-      });
-    }
+    const reason = await this.getAccessReason(userId, lesson);
+    if (reason !== "ok") throw this.lockedException(reason);
     return lesson;
   }
 
   async completeLesson(id: string, userId: string) {
     const lesson = await this.findByIdOrThrow(id);
-    const allowed = await this.checkAccess(userId, lesson);
-    if (!allowed) {
-      throw new ForbiddenException({
-        message: "This lesson is locked. Complete the previous lesson or enroll to continue.",
-        error: "LESSON_LOCKED",
-      });
-    }
+    const reason = await this.getAccessReason(userId, lesson);
+    if (reason !== "ok") throw this.lockedException(reason);
 
     await this.lessonProgressModel.updateOne(
       { user: userId, lesson: lesson._id },

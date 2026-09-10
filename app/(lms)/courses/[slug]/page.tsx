@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getCourseBySlug } from "@/lib/api/courses";
-import { enrollInFreeCourse } from "@/lib/api/enrollments";
+import { enrollInFreeCourse, listMyEnrollments } from "@/lib/api/enrollments";
 import { ApiError } from "@/lib/api/client";
 import type { LmsCourse } from "@/types/lms";
 import { FormButton } from "@/components/lms/ui/FormButton";
@@ -19,6 +19,7 @@ export default function CourseDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isEnrolling, setIsEnrolling] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,6 +35,20 @@ export default function CourseDetailPage() {
       cancelled = true;
     };
   }, [params.slug]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    let cancelled = false;
+    listMyEnrollments(accessToken)
+      .then((enrollments) => {
+        if (cancelled) return;
+        setIsEnrolled(enrollments.some((e) => e.course.slug === params.slug));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, params.slug]);
 
   if (error) {
     return (
@@ -124,8 +139,14 @@ export default function CourseDetailPage() {
               )}
             </div>
 
-            {!user ? (
-              <FormButton onClick={() => router.push("/login")}>Log In to Enroll</FormButton>
+            {isEnrolled ? (
+              <FormButton onClick={() => router.push(`/student/courses/${course.slug}`)}>
+                Continue Learning →
+              </FormButton>
+            ) : !user ? (
+              <FormButton onClick={() => router.push(`/login?next=/courses/${course.slug}`)}>
+                Log In to Enroll
+              </FormButton>
             ) : isFree ? (
               <FormButton onClick={handleEnrollFree} loading={isEnrolling}>
                 Enroll for Free
@@ -139,12 +160,6 @@ export default function CourseDetailPage() {
             )}
           </div>
           {actionError && <p className="mt-3 text-sm text-red-600">{actionError}</p>}
-          {!isFree && (
-            <p className="mt-3 text-xs text-ink/50">
-              Checkout requires the Razorpay payments module, which isn&rsquo;t built
-              yet — you can add this to your cart now.
-            </p>
-          )}
         </div>
       </div>
     </section>
