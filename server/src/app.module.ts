@@ -11,6 +11,7 @@ import { CoursesModule } from "./modules/courses/courses.module";
 import { EnrollmentsModule } from "./modules/enrollments/enrollments.module";
 import { ModulesModule } from "./modules/modules/modules.module";
 import { LessonsModule } from "./modules/lessons/lessons.module";
+import { QuizzesModule } from "./modules/quizzes/quizzes.module";
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { LessonsModule } from "./modules/lessons/lessons.module";
     EnrollmentsModule,
     ModulesModule,
     LessonsModule,
+    QuizzesModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

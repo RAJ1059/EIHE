@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { ApiError } from "@/lib/api/client";
 import { getAdminCourse } from "@/lib/api/courses";
@@ -20,30 +21,40 @@ import {
   updateLesson,
   type LessonInput,
 } from "@/lib/api/lessons";
-import type { LmsCourse, LmsLesson, LmsModule } from "@/types/lms";
+import {
+  createFinalQuiz,
+  createModuleQuiz,
+  deleteQuiz,
+  listFinalQuizzes,
+  listModuleQuizzes,
+} from "@/lib/api/quizzes";
+import type { LmsCourse, LmsLesson, LmsModule, LmsQuiz } from "@/types/lms";
 import { Card } from "@/components/lms/ui/Card";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { Input, Label, Textarea } from "@/components/lms/ui/Input";
 
-type ModuleWithLessons = LmsModule & { lessons: LmsLesson[] };
+type ModuleWithContent = LmsModule & { lessons: LmsLesson[]; quizzes: LmsQuiz[] };
 
 export default function CourseContentPage() {
   const params = useParams<{ id: string }>();
   const { accessToken } = useAuth();
   const [course, setCourse] = useState<LmsCourse | null>(null);
-  const [modules, setModules] = useState<ModuleWithLessons[] | null>(null);
+  const [modules, setModules] = useState<ModuleWithContent[] | null>(null);
+  const [finalQuizzes, setFinalQuizzes] = useState<LmsQuiz[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!accessToken) return;
     const moduleList = await listAdminModules(accessToken, params.id);
-    const withLessons = await Promise.all(
+    const withContent = await Promise.all(
       moduleList.map(async (module) => ({
         ...module,
         lessons: await listAdminLessons(accessToken, module._id),
+        quizzes: await listModuleQuizzes(accessToken, module._id),
       })),
     );
-    setModules(withLessons);
+    setModules(withContent);
+    setFinalQuizzes(await listFinalQuizzes(accessToken, params.id));
   }, [accessToken, params.id]);
 
   useEffect(() => {
@@ -117,7 +128,7 @@ export default function CourseContentPage() {
     await refresh();
   }
 
-  async function handleMoveLesson(module: ModuleWithLessons, lessonId: string, direction: -1 | 1) {
+  async function handleMoveLesson(module: ModuleWithContent, lessonId: string, direction: -1 | 1) {
     if (!accessToken) return;
     const ids = module.lessons.map((l) => l._id);
     const index = ids.indexOf(lessonId);
@@ -125,6 +136,29 @@ export default function CourseContentPage() {
     if (target < 0 || target >= ids.length) return;
     [ids[index], ids[target]] = [ids[target], ids[index]];
     await reorderLessons(accessToken, ids);
+    await refresh();
+  }
+
+  async function handleAddModuleQuiz(moduleId: string) {
+    if (!accessToken) return;
+    const title = prompt("Quiz title?");
+    if (!title?.trim()) return;
+    await createModuleQuiz(accessToken, moduleId, { title: title.trim() });
+    await refresh();
+  }
+
+  async function handleAddFinalQuiz() {
+    if (!accessToken) return;
+    const title = prompt("Final quiz title?");
+    if (!title?.trim()) return;
+    await createFinalQuiz(accessToken, params.id, { title: title.trim() });
+    await refresh();
+  }
+
+  async function handleDeleteQuiz(quizId: string) {
+    if (!accessToken) return;
+    if (!confirm("Delete this quiz and all its questions?")) return;
+    await deleteQuiz(accessToken, quizId);
     await refresh();
   }
 
@@ -156,6 +190,8 @@ export default function CourseContentPage() {
               onUpdateLesson={handleUpdateLesson}
               onDeleteLesson={handleDeleteLesson}
               onMoveLesson={(lessonId, direction) => handleMoveLesson(module, lessonId, direction)}
+              onAddQuiz={() => handleAddModuleQuiz(module._id)}
+              onDeleteQuiz={handleDeleteQuiz}
             />
           ))}
 
@@ -164,6 +200,30 @@ export default function CourseContentPage() {
           )}
 
           <AddModuleForm onAdd={handleAddModule} />
+
+          <Card>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-ink">Final Assessment</h2>
+              <button
+                type="button"
+                onClick={handleAddFinalQuiz}
+                className="text-sm font-semibold text-teal hover:underline"
+              >
+                + Add Final Quiz
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-ink/50">
+              Course-level quizzes, unlocked once every lesson in the course is complete.
+            </p>
+            <ul className="mt-4 divide-y divide-ink/5">
+              {finalQuizzes?.map((quiz) => (
+                <QuizRow key={quiz._id} quiz={quiz} onDelete={() => handleDeleteQuiz(quiz._id)} />
+              ))}
+              {finalQuizzes?.length === 0 && (
+                <li className="py-3 text-sm text-ink/40">No final quiz yet.</li>
+              )}
+            </ul>
+          </Card>
         </div>
       )}
     </div>
@@ -210,8 +270,10 @@ function ModuleCard({
   onUpdateLesson,
   onDeleteLesson,
   onMoveLesson,
+  onAddQuiz,
+  onDeleteQuiz,
 }: {
-  module: ModuleWithLessons;
+  module: ModuleWithContent;
   isFirst: boolean;
   isLast: boolean;
   onMove: (direction: -1 | 1) => void;
@@ -221,6 +283,8 @@ function ModuleCard({
   onUpdateLesson: (lessonId: string, input: Partial<LessonInput>) => Promise<void>;
   onDeleteLesson: (lessonId: string) => void;
   onMoveLesson: (lessonId: string, direction: -1 | 1) => void;
+  onAddQuiz: () => void;
+  onDeleteQuiz: (quizId: string) => void;
 }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [title, setTitle] = useState(module.title);
@@ -278,6 +342,13 @@ function ModuleCard({
         <div className="flex items-center gap-3">
           <button
             type="button"
+            onClick={onAddQuiz}
+            className="text-sm font-semibold text-teal hover:underline"
+          >
+            + Add Quiz
+          </button>
+          <button
+            type="button"
             onClick={() => setShowAddLesson((v) => !v)}
             className="text-sm font-semibold text-teal hover:underline"
           >
@@ -305,8 +376,11 @@ function ModuleCard({
             onDelete={() => onDeleteLesson(lesson._id)}
           />
         ))}
-        {module.lessons.length === 0 && (
-          <li className="py-3 text-sm text-ink/40">No lessons in this module yet.</li>
+        {module.quizzes.map((quiz) => (
+          <QuizRow key={quiz._id} quiz={quiz} onDelete={() => onDeleteQuiz(quiz._id)} />
+        ))}
+        {module.lessons.length === 0 && module.quizzes.length === 0 && (
+          <li className="py-3 text-sm text-ink/40">No lessons or quizzes in this module yet.</li>
         )}
       </ul>
 
@@ -322,6 +396,36 @@ function ModuleCard({
         </div>
       )}
     </Card>
+  );
+}
+
+function QuizRow({ quiz, onDelete }: { quiz: LmsQuiz; onDelete: () => void }) {
+  return (
+    <li className="flex items-center justify-between py-3">
+      <div>
+        <p className="text-sm font-medium text-ink">📝 {quiz.title}</p>
+        <p className="text-xs text-ink/50">
+          Pass {quiz.passingPercentage}%
+          {quiz.timeLimitMinutes ? ` · ${quiz.timeLimitMinutes} min` : ""}
+          {quiz.maxAttempts ? ` · ${quiz.maxAttempts} attempts` : " · unlimited attempts"}
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <Link
+          href={`/admin/quizzes/${quiz._id}`}
+          className="text-xs font-semibold text-teal hover:underline"
+        >
+          Manage Questions
+        </Link>
+        <button
+          type="button"
+          onClick={onDelete}
+          className="text-xs font-semibold text-red-600 hover:underline"
+        >
+          Delete
+        </button>
+      </div>
+    </li>
   );
 }
 
@@ -427,8 +531,24 @@ function LessonForm({
     initial?.requirePreviousLesson ?? false,
   );
   const [allowFreePreview, setAllowFreePreview] = useState(initial?.allowFreePreview ?? false);
+  const [topics, setTopics] = useState(initial?.topics ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function addTopic() {
+    setTopics((prev) => [
+      ...prev,
+      { _id: `new-${prev.length}`, title: "", content: "", order: prev.length },
+    ]);
+  }
+
+  function updateTopic(index: number, field: "title" | "content", value: string) {
+    setTopics((prev) => prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)));
+  }
+
+  function removeTopic(index: number) {
+    setTopics((prev) => prev.filter((_, i) => i !== index));
+  }
 
   async function submit() {
     if (!title.trim() || !youtubeUrl.trim()) return;
@@ -443,6 +563,9 @@ function LessonForm({
         duration: duration.trim(),
         requirePreviousLesson,
         allowFreePreview,
+        topics: topics
+          .filter((t) => t.title.trim())
+          .map((t, order) => ({ title: t.title.trim(), content: t.content, order })),
       });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not save this lesson.");
@@ -505,6 +628,46 @@ function LessonForm({
           />
           Allow free preview (no enrollment needed)
         </label>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="lesson-topics">Topics (optional sub-sections within this lesson)</Label>
+          <button
+            type="button"
+            onClick={addTopic}
+            className="text-xs font-semibold text-teal hover:underline"
+          >
+            + Add Topic
+          </button>
+        </div>
+        <div className="space-y-2">
+          {topics.map((topic, index) => (
+            <div key={topic._id} className="rounded-lg border border-ink/10 p-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Topic title"
+                  value={topic.title}
+                  onChange={(e) => updateTopic(index, "title", e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeTopic(index)}
+                  className="shrink-0 text-xs font-semibold text-red-600 hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+              <Textarea
+                className="mt-2"
+                rows={2}
+                placeholder="Topic content"
+                value={topic.content}
+                onChange={(e) => updateTopic(index, "content", e.target.value)}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {error && <p className="text-xs text-red-600">{error}</p>}

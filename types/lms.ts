@@ -70,6 +70,13 @@ export type LmsModule = {
   status: LmsModuleStatus;
 };
 
+export type LmsTopic = {
+  _id: string;
+  title: string;
+  content: string;
+  order: number;
+};
+
 export type LmsLesson = {
   _id: string;
   title: string;
@@ -85,6 +92,7 @@ export type LmsLesson = {
   order: number;
   requirePreviousLesson: boolean;
   allowFreePreview: boolean;
+  topics: LmsTopic[];
 };
 
 export type LmsCurriculumLesson = {
@@ -98,12 +106,133 @@ export type LmsCurriculumLesson = {
   completed: boolean;
 };
 
+export type LmsCurriculumQuiz = {
+  _id: string;
+  title: string;
+  order: number;
+  locked: boolean;
+  passed: boolean;
+};
+
 export type LmsCurriculumModule = {
   _id: string;
   title: string;
   description: string;
   order: number;
   lessons: LmsCurriculumLesson[];
+  quizzes: LmsCurriculumQuiz[];
+};
+
+export type LmsCurriculum = {
+  modules: LmsCurriculumModule[];
+  finalQuizzes: LmsCurriculumQuiz[];
+};
+
+export type LmsQuestionType = "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER";
+
+export type LmsQuestionOption = {
+  _id: string;
+  text: string;
+  isCorrect?: boolean;
+};
+
+export type LmsQuestion = {
+  _id: string;
+  quiz: string;
+  text: string;
+  type: LmsQuestionType;
+  options: LmsQuestionOption[];
+  correctAnswers: string[];
+  points: number;
+  order: number;
+};
+
+export type LmsQuiz = {
+  _id: string;
+  title: string;
+  description: string;
+  course: string;
+  module: string | null;
+  order: number;
+  passingPercentage: number;
+  timeLimitMinutes: number | null;
+  maxAttempts: number | null;
+  retakeDelayMinutes: number | null;
+  randomizeQuestions: boolean;
+  randomizeAnswers: boolean;
+  showCorrectAnswers: boolean;
+  showResults: boolean;
+};
+
+export type LmsQuizAttemptSummary = {
+  attemptNumber: number;
+  submittedAt: string;
+  percentage: number;
+  passed: boolean;
+};
+
+export type LmsQuizForViewer = {
+  _id: string;
+  title: string;
+  description: string;
+  passingPercentage: number;
+  timeLimitMinutes: number | null;
+  maxAttempts: number | null;
+  locked: boolean;
+  attemptsUsed: number;
+  attemptsRemaining: number | null;
+  passed: boolean;
+  attempts: LmsQuizAttemptSummary[];
+};
+
+export type LmsQuizStartQuestion = {
+  _id: string;
+  text: string;
+  type: LmsQuestionType;
+  points: number;
+  options: { _id: string; text: string }[];
+};
+
+export type LmsQuizStartResult = {
+  attempt: {
+    _id: string;
+    attemptNumber: number;
+    startedAt: string;
+    timeLimitMinutes: number | null;
+  };
+  questions: LmsQuizStartQuestion[];
+};
+
+export type LmsQuizAnswerResult = {
+  question: string;
+  selectedOptionIds?: string[];
+  textAnswer?: string | null;
+  isCorrect: boolean;
+  pointsAwarded: number;
+};
+
+export type LmsQuizSubmitResult = {
+  attemptNumber: number;
+  score: number;
+  maxScore: number;
+  percentage: number;
+  passed: boolean;
+  expired: boolean;
+  showResults: boolean;
+  answers: LmsQuizAnswerResult[];
+};
+
+export type LmsQuizAttempt = {
+  _id: string;
+  attemptNumber: number;
+  status: "IN_PROGRESS" | "SUBMITTED";
+  startedAt: string;
+  submittedAt: string | null;
+  timeSpentSeconds: number | null;
+  score: number | null;
+  maxScore: number | null;
+  percentage: number | null;
+  passed: boolean | null;
 };
 
 export type LmsPaginated<T> = {

@@ -23,7 +23,7 @@ export default function CoursePlayerEntryPage() {
     getCurriculum(params.slug, accessToken)
       .then((curriculum) => {
         if (cancelled) return;
-        const firstLesson = curriculum.flatMap((m) => m.lessons)[0];
+        const firstLesson = curriculum.modules.flatMap((m) => m.lessons)[0];
         if (!firstLesson) {
           setError("This course doesn't have any lessons yet.");
           return;

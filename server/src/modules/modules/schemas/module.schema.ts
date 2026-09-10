@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
+import { HydratedDocument, Schema as MongooseSchema, Types } from "mongoose";
 
 export type ModuleDocument = HydratedDocument<Module>;
 
@@ -18,7 +18,7 @@ export class Module {
   @Prop({ trim: true, default: "" })
   description!: string;
 
-  @Prop({ type: Types.ObjectId, ref: "Course", required: true, index: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Course", required: true, index: true })
   course!: Types.ObjectId;
 
   @Prop({ default: 0 })

@@ -1,4 +1,14 @@
-import { IsBoolean, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+  ValidateNested,
+} from "class-validator";
+import { TopicDto } from "./topic.dto";
 
 export class CreateLessonDto {
   @IsString()
@@ -30,4 +40,10 @@ export class CreateLessonDto {
   @IsOptional()
   @IsBoolean()
   allowFreePreview?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TopicDto)
+  topics?: TopicDto[];
 }

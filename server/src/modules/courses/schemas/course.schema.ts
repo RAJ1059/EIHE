@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
+import { HydratedDocument, Schema as MongooseSchema, Types } from "mongoose";
 
 export type CourseDocument = HydratedDocument<Course>;
 
@@ -48,16 +48,16 @@ export class Course {
   @Prop({ type: String, default: null })
   featuredImage!: string | null;
 
-  @Prop({ type: Types.ObjectId, ref: "Category", required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Category", required: true })
   category!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: "Category", default: null })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Category", default: null })
   subcategory!: Types.ObjectId | null;
 
   @Prop({ type: [String], default: [] })
   tags!: string[];
 
-  @Prop({ type: Types.ObjectId, ref: "User", required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "User", required: true })
   instructor!: Types.ObjectId;
 
   @Prop({ type: String, enum: DifficultyLevel, default: DifficultyLevel.BEGINNER })
@@ -106,7 +106,7 @@ export class Course {
   enrollmentEndDate!: Date | null;
 
   // --- Prerequisites (structural only — enforcement lands with Enrollment/Progress in a later phase) ---
-  @Prop({ type: [Types.ObjectId], ref: "Course", default: [] })
+  @Prop({ type: [MongooseSchema.Types.ObjectId], ref: "Course", default: [] })
   prerequisites!: Types.ObjectId[];
 
   // --- Completion & certificate config (structural only — see prerequisites note) ---

@@ -1,5 +1,5 @@
 import { apiFetch } from "./client";
-import type { LmsCurriculumModule, LmsLesson } from "@/types/lms";
+import type { LmsCurriculum, LmsLesson, LmsTopic } from "@/types/lms";
 
 export type LessonInput = {
   title: string;
@@ -9,10 +9,11 @@ export type LessonInput = {
   duration?: string;
   requirePreviousLesson?: boolean;
   allowFreePreview?: boolean;
+  topics?: Pick<LmsTopic, "title" | "content" | "order">[];
 };
 
 export function getCurriculum(slug: string, accessToken?: string | null) {
-  return apiFetch<LmsCurriculumModule[]>(`/courses/${slug}/curriculum`, {
+  return apiFetch<LmsCurriculum>(`/courses/${slug}/curriculum`, {
     accessToken: accessToken ?? undefined,
   });
 }

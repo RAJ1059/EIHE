@@ -1,11 +1,30 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
+import { HydratedDocument, Schema as MongooseSchema, Types } from "mongoose";
 
 export type LessonDocument = HydratedDocument<Lesson>;
 
 export enum LessonVideoType {
   YOUTUBE = "YOUTUBE",
 }
+
+// A topic is a lightweight content block within a lesson (e.g. a
+// sub-heading with its own text) — not a separately tracked/locked entity.
+// Completion is tracked at the lesson level only.
+@Schema({ _id: true })
+export class Topic {
+  _id!: Types.ObjectId;
+
+  @Prop({ required: true, trim: true })
+  title!: string;
+
+  @Prop({ trim: true, default: "" })
+  content!: string;
+
+  @Prop({ default: 0 })
+  order!: number;
+}
+
+export const TopicSchema = SchemaFactory.createForClass(Topic);
 
 @Schema({ timestamps: true })
 export class Lesson {
@@ -23,10 +42,10 @@ export class Lesson {
   @Prop({ trim: true, default: "" })
   content!: string;
 
-  @Prop({ type: Types.ObjectId, ref: "Module", required: true, index: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Module", required: true, index: true })
   module!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: "Course", required: true, index: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Course", required: true, index: true })
   course!: Types.ObjectId;
 
   @Prop({ type: String, enum: LessonVideoType, default: LessonVideoType.YOUTUBE })
@@ -49,6 +68,9 @@ export class Lesson {
 
   @Prop({ default: false })
   allowFreePreview!: boolean;
+
+  @Prop({ type: [TopicSchema], default: [] })
+  topics!: Topic[];
 
   createdAt?: Date;
   updatedAt?: Date;

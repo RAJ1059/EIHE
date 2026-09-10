@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
+import { HydratedDocument, Schema as MongooseSchema, Types } from "mongoose";
 
 export type LessonProgressDocument = HydratedDocument<LessonProgress>;
 
@@ -7,16 +7,16 @@ export type LessonProgressDocument = HydratedDocument<LessonProgress>;
 export class LessonProgress {
   _id!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "User", required: true, index: true })
   user!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: "Lesson", required: true, index: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Lesson", required: true, index: true })
   lesson!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: "Module", required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Module", required: true })
   module!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: "Course", required: true, index: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Course", required: true, index: true })
   course!: Types.ObjectId;
 
   @Prop({ default: () => new Date() })

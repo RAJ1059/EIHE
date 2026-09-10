@@ -4,6 +4,12 @@ import { Model } from "mongoose";
 import { Lesson, type LessonDocument } from "./schemas/lesson.schema";
 import { LessonProgress, type LessonProgressDocument } from "../lesson-progress/schemas/lesson-progress.schema";
 import { Module, type ModuleDocument } from "../modules/schemas/module.schema";
+import { Quiz, type QuizDocument } from "../quizzes/schemas/quiz.schema";
+import {
+  QuizAttempt,
+  QuizAttemptStatus,
+  type QuizAttemptDocument,
+} from "../quizzes/schemas/quiz-attempt.schema";
 import { EnrollmentsService } from "../enrollments/enrollments.service";
 import { extractYoutubeVideoId } from "../../common/utils/youtube";
 import { slugify } from "../../common/utils/slugify";
@@ -18,6 +24,8 @@ export class LessonsService {
     @InjectModel(LessonProgress.name)
     private readonly lessonProgressModel: Model<LessonProgressDocument>,
     @InjectModel(Module.name) private readonly moduleModel: Model<ModuleDocument>,
+    @InjectModel(Quiz.name) private readonly quizModel: Model<QuizDocument>,
+    @InjectModel(QuizAttempt.name) private readonly quizAttemptModel: Model<QuizAttemptDocument>,
     private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
@@ -134,12 +142,30 @@ export class LessonsService {
   async getCurriculum(courseId: string, userId: string | null) {
     const modules = await this.moduleModel.find({ course: courseId }).sort({ order: 1 }).exec();
     const lessons = await this.lessonModel.find({ course: courseId }).sort({ order: 1 }).exec();
+    const quizzes = await this.quizModel.find({ course: courseId }).sort({ order: 1 }).exec();
+
+    const enrolled = userId ? await this.enrollmentsService.isEnrolled(userId, courseId) : false;
 
     const completedLessonIds = userId
       ? new Set(
           (
             await this.lessonProgressModel.find({ user: userId, course: courseId }).exec()
           ).map((p) => p.lesson.toString()),
+        )
+      : new Set<string>();
+
+    const passedQuizIds = userId
+      ? new Set(
+          (
+            await this.quizAttemptModel
+              .find({
+                user: userId,
+                course: courseId,
+                status: QuizAttemptStatus.SUBMITTED,
+                passed: true,
+              })
+              .exec()
+          ).map((a) => a.quiz.toString()),
         )
       : new Set<string>();
 
@@ -150,6 +176,32 @@ export class LessonsService {
       existing.push(lesson);
       lessonsByModule.set(key, existing);
     }
+
+    const quizzesByModule = new Map<string, QuizDocument[]>();
+    const finalQuizzes: QuizDocument[] = [];
+    for (const quiz of quizzes) {
+      if (!quiz.module) {
+        finalQuizzes.push(quiz);
+        continue;
+      }
+      const key = quiz.module.toString();
+      const existing = quizzesByModule.get(key) ?? [];
+      existing.push(quiz);
+      quizzesByModule.set(key, existing);
+    }
+
+    const summarizeQuiz = (quiz: QuizDocument, requiredLessons: LessonDocument[]) => {
+      const allLessonsComplete =
+        requiredLessons.length === 0 ||
+        requiredLessons.every((l) => completedLessonIds.has(l._id.toString()));
+      return {
+        _id: quiz._id,
+        title: quiz.title,
+        order: quiz.order,
+        locked: !enrolled || !allLessonsComplete,
+        passed: passedQuizIds.has(quiz._id.toString()),
+      };
+    };
 
     const result = [];
     for (const module of modules) {
@@ -168,16 +220,25 @@ export class LessonsService {
           completed: completedLessonIds.has(lesson._id.toString()),
         });
       }
+
+      const moduleQuizzes = (quizzesByModule.get(module._id.toString()) ?? []).map((quiz) =>
+        summarizeQuiz(quiz, moduleLessons),
+      );
+
       result.push({
         _id: module._id,
         title: module.title,
         description: module.description,
         order: module.order,
         lessons: lessonSummaries,
+        quizzes: moduleQuizzes,
       });
     }
 
-    return result;
+    return {
+      modules: result,
+      finalQuizzes: finalQuizzes.map((quiz) => summarizeQuiz(quiz, lessons)),
+    };
   }
 
   private async findPreviousLesson(lesson: LessonDocument): Promise<LessonDocument | null> {
