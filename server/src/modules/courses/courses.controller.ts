@@ -17,6 +17,8 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { Role } from "../../common/enums/role.enum";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import type { AuthenticatedUser } from "../auth/strategies/jwt.strategy";
 
 @Controller("courses")
 export class CoursesController {
@@ -50,18 +52,39 @@ export class AdminCoursesController {
   }
 
   @Post()
-  create(@Body() dto: CreateCourseDto) {
-    return this.coursesService.create(dto);
+  create(@Body() dto: CreateCourseDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.coursesService.create(dto, user.role);
   }
 
   @Put(":id")
-  update(@Param("id") id: string, @Body() dto: UpdateCourseDto) {
-    return this.coursesService.update(id, dto);
+  update(
+    @Param("id") id: string,
+    @Body() dto: UpdateCourseDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.coursesService.update(id, dto, user.role);
   }
 
   @Delete(":id")
   @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   remove(@Param("id") id: string) {
     return this.coursesService.remove(id);
+  }
+
+  @Put(":id/submit-for-review")
+  submitForReview(@Param("id") id: string) {
+    return this.coursesService.submitForReview(id);
+  }
+
+  @Put(":id/approve")
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  approve(@Param("id") id: string) {
+    return this.coursesService.approve(id);
+  }
+
+  @Put(":id/reject")
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  reject(@Param("id") id: string) {
+    return this.coursesService.reject(id);
   }
 }

@@ -1,9 +1,16 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { FilterQuery, Model, Types } from "mongoose";
 import { User, type UserDocument } from "./schemas/user.schema";
-import type { Role } from "../../common/enums/role.enum";
+import { Role } from "../../common/enums/role.enum";
 import type { UpdateProfileDto } from "./dto/update-profile.dto";
+
+export type UserListQuery = {
+  search?: string;
+  role?: Role;
+  page?: number;
+  limit?: number;
+};
 
 @Injectable()
 export class UsersService {
@@ -36,6 +43,49 @@ export class UsersService {
     if (!user) throw new NotFoundException("User not found.");
 
     if (dto.name !== undefined) user.name = dto.name;
+    await user.save();
+    return user;
+  }
+
+  async findAll(query: UserListQuery) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const filter: FilterQuery<UserDocument> = {};
+    if (query.role) filter.role = query.role;
+    if (query.search) {
+      const term = query.search.trim();
+      filter.$or = [
+        { name: { $regex: term, $options: "i" } },
+        { email: { $regex: term, $options: "i" } },
+      ];
+    }
+
+    const [items, total] = await Promise.all([
+      this.userModel
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .exec(),
+      this.userModel.countDocuments(filter).exec(),
+    ]);
+
+    return {
+      items,
+      pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    };
+  }
+
+  async findByIdOrThrow(id: string) {
+    const user = await this.userModel.findById(id).exec();
+    if (!user) throw new NotFoundException("User not found.");
+    return user;
+  }
+
+  async updateRole(id: string, role: Role) {
+    const user = await this.findByIdOrThrow(id);
+    user.role = role;
     await user.save();
     return user;
   }

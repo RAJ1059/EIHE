@@ -1,6 +1,6 @@
 import { Type } from "class-transformer";
 import { IsEnum, IsIn, IsInt, IsMongoId, IsOptional, IsString, Max, Min } from "class-validator";
-import { DifficultyLevel } from "../schemas/course.schema";
+import { CourseStatus, DifficultyLevel } from "../schemas/course.schema";
 
 export type CourseSort = "newest" | "popular" | "price_asc" | "price_desc";
 
@@ -8,6 +8,11 @@ export class QueryCoursesDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  // Admin listing only — the public endpoint always forces PUBLISHED.
+  @IsOptional()
+  @IsEnum(CourseStatus)
+  status?: CourseStatus;
 
   @IsOptional()
   @IsMongoId()

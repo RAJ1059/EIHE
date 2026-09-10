@@ -9,6 +9,7 @@ import type { LmsCourse } from "@/types/lms";
 
 const STATUS_STYLES: Record<LmsCourse["status"], string> = {
   DRAFT: "bg-ink/10 text-ink/60",
+  PENDING_REVIEW: "bg-amber-100 text-amber-700",
   PUBLISHED: "bg-teal/15 text-teal",
   ARCHIVED: "bg-red-100 text-red-700",
 };

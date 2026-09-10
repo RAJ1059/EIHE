@@ -81,6 +81,49 @@ export class EnrollmentsService {
     return Boolean(enrollment);
   }
 
+  findForUser(userId: string) {
+    return this.enrollmentModel
+      .find({ user: userId })
+      .sort({ createdAt: -1 })
+      .populate({ path: "course", select: "title slug shortDescription featuredImage" })
+      .exec();
+  }
+
+  /** Admin-initiated enrollment — bypasses the free-course-only restriction. */
+  async manualEnroll(userId: string, courseId: string) {
+    await this.coursesService.findByIdOrThrow(courseId);
+
+    const existing = await this.enrollmentModel.findOne({ user: userId, course: courseId }).exec();
+    if (existing) return existing;
+
+    try {
+      return await this.enrollmentModel.create({
+        user: userId,
+        course: courseId,
+        source: EnrollmentSource.MANUAL,
+        status: EnrollmentStatus.ACTIVE,
+        enrolledAt: new Date(),
+      });
+    } catch (error) {
+      if (this.isDuplicateKeyError(error)) {
+        const enrollment = await this.enrollmentModel
+          .findOne({ user: userId, course: courseId })
+          .exec();
+        if (enrollment) return enrollment;
+      }
+      throw new ConflictException("Could not enroll this student.");
+    }
+  }
+
+  async removeEnrollment(userId: string, courseId: string) {
+    const result = await this.enrollmentModel
+      .deleteOne({ user: userId, course: courseId })
+      .exec();
+    if (result.deletedCount === 0) {
+      throw new NotFoundException("This student isn't enrolled in that course.");
+    }
+  }
+
   private isDuplicateKeyError(error: unknown): boolean {
     return typeof error === "object" && error !== null && (error as { code?: number }).code === 11000;
   }

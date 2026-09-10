@@ -5,6 +5,7 @@ export type CourseDocument = HydratedDocument<Course>;
 
 export enum CourseStatus {
   DRAFT = "DRAFT",
+  PENDING_REVIEW = "PENDING_REVIEW",
   PUBLISHED = "PUBLISHED",
   ARCHIVED = "ARCHIVED",
 }

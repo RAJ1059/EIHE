@@ -11,10 +11,13 @@ export function CourseForm({
   initialCourse,
   onSubmit,
   submitLabel,
+  canPublish = true,
 }: {
   initialCourse?: LmsCourse;
   onSubmit: (input: Omit<CourseInput, "instructor">) => Promise<void>;
   submitLabel: string;
+  /** false for instructors — they submit for review instead of publishing directly. */
+  canPublish?: boolean;
 }) {
   const [categories, setCategories] = useState<LmsCategory[]>([]);
   const [title, setTitle] = useState(initialCourse?.title ?? "");
@@ -166,9 +169,20 @@ export function CourseForm({
           onChange={(e) => setStatus(e.target.value as LmsCourse["status"])}
         >
           <option value="DRAFT">Draft</option>
-          <option value="PUBLISHED">Published</option>
+          {status === "PENDING_REVIEW" && (
+            <option value="PENDING_REVIEW" disabled>
+              Pending Review (waiting on admin)
+            </option>
+          )}
+          {canPublish && <option value="PUBLISHED">Published</option>}
           <option value="ARCHIVED">Archived</option>
         </Select>
+        {!canPublish && (
+          <p className="mt-1.5 text-xs text-ink/50">
+            Instructors can&rsquo;t publish directly — save as Draft, then use &ldquo;Submit for
+            Review&rdquo; below.
+          </p>
+        )}
       </div>
 
       <FieldError message={error} />

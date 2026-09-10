@@ -5,6 +5,7 @@ export type CourseQuery = {
   search?: string;
   category?: string;
   difficultyLevel?: LmsCourse["difficultyLevel"];
+  status?: LmsCourse["status"];
   sort?: "newest" | "popular" | "price_asc" | "price_desc";
   page?: number;
   limit?: number;
@@ -83,4 +84,19 @@ export function deleteCourse(accessToken: string, id: string) {
     method: "DELETE",
     accessToken,
   });
+}
+
+export function submitCourseForReview(accessToken: string, id: string) {
+  return apiFetch<LmsCourse>(`/admin/courses/${id}/submit-for-review`, {
+    method: "PUT",
+    accessToken,
+  });
+}
+
+export function approveCourse(accessToken: string, id: string) {
+  return apiFetch<LmsCourse>(`/admin/courses/${id}/approve`, { method: "PUT", accessToken });
+}
+
+export function rejectCourse(accessToken: string, id: string) {
+  return apiFetch<LmsCourse>(`/admin/courses/${id}/reject`, { method: "PUT", accessToken });
 }

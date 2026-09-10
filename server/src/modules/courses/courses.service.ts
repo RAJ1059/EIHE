@@ -1,8 +1,15 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { FilterQuery, Model } from "mongoose";
 import { Course, CourseStatus, type CourseDocument } from "./schemas/course.schema";
 import { slugify } from "../../common/utils/slugify";
+import { Role } from "../../common/enums/role.enum";
 import type { CreateCourseDto } from "./dto/create-course.dto";
 import type { UpdateCourseDto } from "./dto/update-course.dto";
 import type { QueryCoursesDto } from "./dto/query-courses.dto";
@@ -19,12 +26,14 @@ export class CoursesService {
     @InjectModel(Course.name) private readonly courseModel: Model<CourseDocument>,
   ) {}
 
-  async create(dto: CreateCourseDto) {
+  async create(dto: CreateCourseDto, requesterRole: Role) {
+    this.assertCanSetStatus(requesterRole, dto.status);
     const slug = await this.uniqueSlug(dto.title);
     return this.courseModel.create({ ...dto, slug });
   }
 
-  async update(id: string, dto: UpdateCourseDto) {
+  async update(id: string, dto: UpdateCourseDto, requesterRole: Role) {
+    this.assertCanSetStatus(requesterRole, dto.status);
     const course = await this.findByIdOrThrow(id);
 
     if (dto.title && dto.title !== course.title) {
@@ -39,6 +48,49 @@ export class CoursesService {
   async remove(id: string) {
     const course = await this.findByIdOrThrow(id);
     await course.deleteOne();
+  }
+
+  /**
+   * Instructors can't publish directly — their courses go DRAFT ->
+   * PENDING_REVIEW -> (approved) PUBLISHED. Only Admin/Super Admin can set
+   * PUBLISHED directly. Enforced here, not just hidden in the UI.
+   */
+  private assertCanSetStatus(requesterRole: Role, status?: CourseStatus) {
+    if (status !== CourseStatus.PUBLISHED) return;
+    if (requesterRole === Role.SUPER_ADMIN || requesterRole === Role.ADMIN) return;
+    throw new ForbiddenException(
+      "Instructors can't publish a course directly — submit it for review instead.",
+    );
+  }
+
+  async submitForReview(id: string) {
+    const course = await this.findByIdOrThrow(id);
+    if (course.status !== CourseStatus.DRAFT) {
+      throw new BadRequestException("Only a draft course can be submitted for review.");
+    }
+    course.status = CourseStatus.PENDING_REVIEW;
+    await course.save();
+    return course;
+  }
+
+  async approve(id: string) {
+    const course = await this.findByIdOrThrow(id);
+    if (course.status !== CourseStatus.PENDING_REVIEW) {
+      throw new BadRequestException("Only a course pending review can be approved.");
+    }
+    course.status = CourseStatus.PUBLISHED;
+    await course.save();
+    return course;
+  }
+
+  async reject(id: string) {
+    const course = await this.findByIdOrThrow(id);
+    if (course.status !== CourseStatus.PENDING_REVIEW) {
+      throw new BadRequestException("Only a course pending review can be rejected.");
+    }
+    course.status = CourseStatus.DRAFT;
+    await course.save();
+    return course;
   }
 
   findByIdOrThrow(id: string) {
@@ -77,6 +129,7 @@ export class CoursesService {
 
     const filter: FilterQuery<CourseDocument> = {};
     if (query.statuses) filter.status = { $in: query.statuses };
+    else if (query.status) filter.status = query.status;
     if (query.category) filter.category = query.category;
     if (query.difficultyLevel) filter.difficultyLevel = query.difficultyLevel;
     if (query.search) filter.$text = { $search: query.search };

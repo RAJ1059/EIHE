@@ -11,7 +11,7 @@ export type LmsUser = {
   role: LmsRole;
 };
 
-export type LmsCourseStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+export type LmsCourseStatus = "DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "ARCHIVED";
 export type LmsDifficultyLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 export type LmsAccessType = "OPEN" | "FREE" | "PAID" | "CLOSED";
 export type LmsAccessDurationType =
@@ -233,6 +233,30 @@ export type LmsQuizAttempt = {
   maxScore: number | null;
   percentage: number | null;
   passed: boolean | null;
+};
+
+export type LmsAdminUser = {
+  _id: string;
+  name: string;
+  email: string;
+  role: LmsRole;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LmsAdminStatsOverview = {
+  totalStudents: number;
+  totalInstructors: number;
+  totalCourses: number;
+  publishedCourses: number;
+  draftCourses: number;
+  pendingReviewCourses: number;
+  archivedCourses: number;
+  totalEnrollments: number;
+  activeEnrollments: number;
+  newStudentsThisWeek: number;
+  newEnrollmentsThisWeek: number;
 };
 
 export type LmsPaginated<T> = {

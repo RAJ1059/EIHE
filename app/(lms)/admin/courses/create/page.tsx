@@ -22,7 +22,11 @@ export default function CreateCoursePage() {
         You are listed as the instructor for this course.
       </p>
       <div className="mt-6">
-        <CourseForm onSubmit={handleSubmit} submitLabel="Create Course" />
+        <CourseForm
+          onSubmit={handleSubmit}
+          submitLabel="Create Course"
+          canPublish={user?.role === "SUPER_ADMIN" || user?.role === "ADMIN"}
+        />
       </div>
     </div>
   );
