@@ -74,6 +74,13 @@ export class EnrollmentsService {
     }
   }
 
+  async isEnrolled(userId: string, courseId: string): Promise<boolean> {
+    const enrollment = await this.enrollmentModel
+      .exists({ user: userId, course: courseId, status: EnrollmentStatus.ACTIVE })
+      .exec();
+    return Boolean(enrollment);
+  }
+
   private isDuplicateKeyError(error: unknown): boolean {
     return typeof error === "object" && error !== null && (error as { code?: number }).code === 11000;
   }

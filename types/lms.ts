@@ -59,6 +59,53 @@ export type LmsCourse = {
   updatedAt: string;
 };
 
+export type LmsModuleStatus = "DRAFT" | "PUBLISHED";
+
+export type LmsModule = {
+  _id: string;
+  title: string;
+  description: string;
+  course: string;
+  order: number;
+  status: LmsModuleStatus;
+};
+
+export type LmsLesson = {
+  _id: string;
+  title: string;
+  slug: string;
+  description: string;
+  content: string;
+  module: string;
+  course: string;
+  videoType: "YOUTUBE";
+  youtubeUrl: string | null;
+  youtubeVideoId: string | null;
+  duration: string;
+  order: number;
+  requirePreviousLesson: boolean;
+  allowFreePreview: boolean;
+};
+
+export type LmsCurriculumLesson = {
+  _id: string;
+  title: string;
+  slug: string;
+  duration: string;
+  order: number;
+  allowFreePreview: boolean;
+  locked: boolean;
+  completed: boolean;
+};
+
+export type LmsCurriculumModule = {
+  _id: string;
+  title: string;
+  description: string;
+  order: number;
+  lessons: LmsCurriculumLesson[];
+};
+
 export type LmsPaginated<T> = {
   items: T[];
   pagination: {

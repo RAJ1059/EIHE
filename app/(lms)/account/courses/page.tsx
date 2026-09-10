@@ -75,9 +75,8 @@ export default function MyCoursesPage() {
         {enrollments && enrollments.length > 0 && (
           <div className="mt-8 space-y-4">
             {enrollments.map((enrollment) => (
-              <Link
+              <div
                 key={enrollment._id}
-                href={`/courses/${enrollment.course.slug}`}
                 className="flex items-center justify-between rounded-2xl border border-ink/10 bg-white p-5 transition-shadow hover:shadow-md"
               >
                 <div>
@@ -86,10 +85,18 @@ export default function MyCoursesPage() {
                     Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
                   </p>
                 </div>
-                <span className="rounded-full bg-teal/15 px-3 py-1 text-xs font-semibold text-teal">
-                  {enrollment.status}
-                </span>
-              </Link>
+                <div className="flex items-center gap-4">
+                  <span className="rounded-full bg-teal/15 px-3 py-1 text-xs font-semibold text-teal">
+                    {enrollment.status}
+                  </span>
+                  <Link
+                    href={`/account/courses/${enrollment.course.slug}`}
+                    className="text-sm font-semibold text-sage hover:underline"
+                  >
+                    Continue →
+                  </Link>
+                </div>
+              </div>
             ))}
           </div>
         )}

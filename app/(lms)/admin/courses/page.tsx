@@ -93,6 +93,12 @@ export default function AdminCoursesPage() {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Link
+                    href={`/admin/courses/${course._id}/content`}
+                    className="mr-4 text-sm font-semibold text-teal hover:underline"
+                  >
+                    Content
+                  </Link>
+                  <Link
                     href={`/admin/courses/${course._id}/edit`}
                     className="text-sm font-semibold text-teal hover:underline"
                   >
