@@ -4,32 +4,25 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { ADMIN_ROLES, MANAGEMENT_ROLES, homePathForRole } from "@/lib/auth/roles";
 import { PortalTopBar } from "@/components/lms/ui/PortalTopBar";
 
 const NAV_ITEMS = [
-  { href: "/admin/dashboard", label: "Dashboard" },
-  { href: "/admin/courses", label: "Courses" },
-  { href: "/admin/course-approval", label: "Course Approval", managementOnly: true },
-  { href: "/admin/users", label: "Users", managementOnly: true },
+  { href: "/student/dashboard", label: "Dashboard" },
+  { href: "/student/courses", label: "My Courses" },
+  { href: "/student/profile", label: "Profile" },
+  { href: "/cart", label: "My Cart" },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (isLoading) return;
-    if (!user) {
-      router.replace("/login");
-    } else if (!ADMIN_ROLES.includes(user.role)) {
-      // Logged in, just the wrong portal — send them to their own, not to /login.
-      router.replace(homePathForRole(user.role));
-    }
+    if (!isLoading && !user) router.replace("/login");
   }, [isLoading, user, router]);
 
-  if (isLoading || !user || !ADMIN_ROLES.includes(user.role)) {
+  if (isLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cream">
         <p className="text-sm text-ink/60">Checking access…</p>
@@ -37,22 +30,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  const isManager = MANAGEMENT_ROLES.includes(user.role);
-
   return (
     <div className="flex min-h-screen flex-col bg-cream">
       <PortalTopBar
-        label="Admin Portal"
+        label="Student Portal"
         userName={user.name}
         onLogout={() => logout().then(() => router.push("/login"))}
       />
-      <div className="flex flex-1">
-        <aside className="w-56 shrink-0 border-r border-ink/10 bg-white px-4 py-8">
-          <p className="px-2 text-xs font-semibold tracking-[0.15em] text-ink/40 uppercase">
-            Admin
+      <div className="flex flex-1 flex-col lg:flex-row">
+        <aside className="w-full shrink-0 border-b border-ink/10 bg-white px-4 py-4 lg:w-56 lg:border-r lg:border-b-0 lg:py-8">
+          <p className="hidden px-2 text-xs font-semibold tracking-[0.15em] text-ink/40 uppercase lg:block">
+            Student
           </p>
-          <nav className="mt-4 space-y-1">
-            {NAV_ITEMS.filter((item) => !item.managementOnly || isManager).map((item) => {
+          <nav className="mt-0 flex gap-1 lg:mt-4 lg:flex-col lg:space-y-1">
+            {NAV_ITEMS.map((item) => {
               const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
               return (
                 <Link
@@ -68,7 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             })}
           </nav>
         </aside>
-        <div className="flex-1 px-8 py-8">{children}</div>
+        <div className="flex-1 px-6 py-8 lg:px-8">{children}</div>
       </div>
     </div>
   );

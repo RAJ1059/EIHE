@@ -69,7 +69,7 @@ export default function CourseDetailPage() {
     setIsEnrolling(true);
     try {
       await enrollInFreeCourse(accessToken, course!._id);
-      router.push("/account/courses");
+      router.push("/student/courses");
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Could not enroll right now.");
     } finally {

@@ -12,10 +12,10 @@ export default function CartPage() {
         <h1 className="text-3xl font-extrabold tracking-tight text-sage">My Cart</h1>
 
         <div className="mt-6 flex gap-4 text-sm font-semibold">
-          <Link href="/account" className="text-ink/60 hover:text-teal">
-            My Account
+          <Link href="/student/dashboard" className="text-ink/60 hover:text-teal">
+            My Dashboard
           </Link>
-          <Link href="/account/courses" className="text-ink/60 hover:text-teal">
+          <Link href="/student/courses" className="text-ink/60 hover:text-teal">
             My Courses
           </Link>
           <span className="text-teal">My Cart</span>

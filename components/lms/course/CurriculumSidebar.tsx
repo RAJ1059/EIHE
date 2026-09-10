@@ -20,7 +20,7 @@ export function CurriculumSidebar({
   return (
     <aside className="w-full shrink-0 lg:w-72">
       <div className="flex items-center justify-between">
-        <Link href="/account/courses" className="text-sm font-semibold text-teal hover:underline">
+        <Link href="/student/courses" className="text-sm font-semibold text-teal hover:underline">
           ← Back to My Courses
         </Link>
         <button
@@ -54,7 +54,7 @@ export function CurriculumSidebar({
                       </span>
                     ) : (
                       <Link
-                        href={`/account/courses/${slug}/lesson/${l._id}`}
+                        href={`/student/courses/${slug}/lesson/${l._id}`}
                         className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${
                           isActive
                             ? "bg-sage/10 font-semibold text-sage"
@@ -77,7 +77,7 @@ export function CurriculumSidebar({
                       </span>
                     ) : (
                       <Link
-                        href={`/account/courses/${slug}/quiz/${q._id}`}
+                        href={`/student/courses/${slug}/quiz/${q._id}`}
                         className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${
                           isActive
                             ? "bg-sage/10 font-semibold text-sage"
@@ -110,7 +110,7 @@ export function CurriculumSidebar({
                       </span>
                     ) : (
                       <Link
-                        href={`/account/courses/${slug}/quiz/${q._id}`}
+                        href={`/student/courses/${slug}/quiz/${q._id}`}
                         className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${
                           isActive
                             ? "bg-sage/10 font-semibold text-sage"

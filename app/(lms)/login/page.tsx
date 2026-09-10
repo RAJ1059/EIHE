@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { homePathForRole } from "@/lib/auth/roles";
 import { ApiError } from "@/lib/api/client";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { Input, Label, FieldError } from "@/components/lms/ui/Input";
@@ -22,8 +23,8 @@ export default function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login(email, password);
-      router.push("/dashboard");
+      const loggedInUser = await login(email, password);
+      router.push(homePathForRole(loggedInUser.role));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
     } finally {

@@ -24,8 +24,8 @@ type AuthState = {
   accessToken: string | null;
   /** True while the initial silent-refresh-on-load check is in flight. */
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LmsUser>;
+  register: (name: string, email: string, password: string) => Promise<LmsUser>;
   logout: () => Promise<void>;
 };
 
@@ -67,12 +67,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await loginRequest({ email, password });
     setAccessToken(result.accessToken);
     setUser(result.user);
+    return result.user;
   }, []);
 
   const register = useCallback(async (name: string, email: string, password: string) => {
     const result = await registerRequest({ name, email, password });
     setAccessToken(result.accessToken);
     setUser(result.user);
+    return result.user;
   }, []);
 
   const logout = useCallback(async () => {

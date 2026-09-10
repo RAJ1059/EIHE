@@ -72,10 +72,11 @@ export const mainNav: NavItem[] = [
   },
   {
     label: "Account",
-    href: "/account",
+    href: "/student/dashboard",
     children: [
-      { label: "My Account", href: "/account" },
-      { label: "My Courses", href: "/account/courses" },
+      { label: "Dashboard", href: "/student/dashboard" },
+      { label: "My Courses", href: "/student/courses" },
+      { label: "Profile", href: "/student/profile" },
       { label: "My Cart", href: "/cart" },
     ],
   },
@@ -117,7 +118,7 @@ export const footerNav = {
   ],
   forLearners: [
     { label: "Programs & Certifications", href: "/programs" },
-    { label: "My Account", href: "/account" },
+    { label: "My Account", href: "/student/dashboard" },
     { label: "Resources", href: "/resources" },
     { label: "FAQs", href: "/faqs" },
   ],

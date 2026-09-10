@@ -9,12 +9,8 @@ import { ApiError } from "@/lib/api/client";
 export default function CoursePlayerEntryPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
-  const { user, accessToken, isLoading } = useAuth();
+  const { accessToken } = useAuth();
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isLoading && !user) router.replace("/login");
-  }, [isLoading, user, router]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -28,7 +24,7 @@ export default function CoursePlayerEntryPage() {
           setError("This course doesn't have any lessons yet.");
           return;
         }
-        router.replace(`/account/courses/${params.slug}/lesson/${firstLesson._id}`);
+        router.replace(`/student/courses/${params.slug}/lesson/${firstLesson._id}`);
       })
       .catch((err) => {
         if (!cancelled) {
@@ -42,7 +38,7 @@ export default function CoursePlayerEntryPage() {
   }, [accessToken, params.slug, router]);
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center bg-cream">
+    <div className="flex min-h-[60vh] items-center justify-center">
       <p className="text-sm text-ink/60">{error ?? "Loading course…"}</p>
     </div>
   );
