@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  /* Source palette, matched to europeanihe.com's Kadence theme globals */
+  --global-palette1: #2cb1bc;
+  --global-palette2: #13919b;
+  --global-palette3: #0f2a43;
+  --global-palette4: #133453;
+  --global-palette5: #587089;
+  --global-palette6: #829ab1;
+  --global-palette7: #e0fcff;
+  --global-palette8: #f5f7fa;
+  --global-palette9: #ffffff;
+  --global-palette10: #45bdc7;
+  --global-palette11: #13612e;
+  --global-palette12: #1159af;
+  --global-palette13: #b82105;
+  --global-palette14: #f7630c;
+  --global-palette15: #f5a524;
+
+  --e-global-color-kadence1: var(--global-palette1);
+  --e-global-color-kadence2: var(--global-palette2);
+  --e-global-color-kadence3: var(--global-palette3);
+  --e-global-color-kadence4: var(--global-palette4);
+  --e-global-color-kadence5: var(--global-palette5);
+  --e-global-color-kadence6: var(--global-palette6);
+  --e-global-color-kadence7: var(--global-palette7);
+  --e-global-color-kadence8: var(--global-palette8);
+  --e-global-color-kadence9: var(--global-palette9);
+  --e-global-color-kadence10: var(--global-palette10);
+
+  /* Brand palette, remapped onto the Kadence globals above */
+  --color-cream: var(--global-palette8);
+  --color-lime: var(--global-palette7);
+  --color-ink: #000000;
+  --color-sage: var(--global-palette4);
+  --color-teal: var(--global-palette1);
+  --color-white: var(--global-palette9);
+  --color-navy-dark: var(--global-palette3);
+  --color-peach: #fbe5c2;
+  --color-peach-ink: #8c5a18;
+
+  --background: var(--color-cream);
+  --foreground: var(--color-ink);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-cream: var(--color-cream);
+  --color-lime: var(--color-lime);
+  --color-ink: var(--color-ink);
+  --color-sage: var(--color-sage);
+  --color-teal: var(--color-teal);
+  --color-white: var(--color-white);
+  --color-navy-dark: var(--color-navy-dark);
+  --color-peach: var(--color-peach);
+  --color-peach-ink: var(--color-peach-ink);
+
+  --font-sans: var(--font-jakarta);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@keyframes marquee-rtl {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
