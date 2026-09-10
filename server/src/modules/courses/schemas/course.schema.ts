@@ -45,7 +45,7 @@ export class Course {
   @Prop({ trim: true, default: "" })
   description!: string;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   featuredImage!: string | null;
 
   @Prop({ type: Types.ObjectId, ref: "Category", required: true })
@@ -73,7 +73,7 @@ export class Course {
   @Prop({ required: true, min: 0, default: 0 })
   price!: number;
 
-  @Prop({ min: 0, default: null })
+  @Prop({ type: Number, min: 0, default: null })
   salePrice!: number | null;
 
   @Prop({ default: "USD" })
@@ -93,16 +93,16 @@ export class Course {
   @Prop({ type: String, enum: AccessDurationType, default: AccessDurationType.NEVER_EXPIRES })
   accessDurationType!: AccessDurationType;
 
-  @Prop({ min: 0, default: null })
+  @Prop({ type: Number, min: 0, default: null })
   accessDurationDays!: number | null;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   accessExpiryDate!: Date | null;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   enrollmentStartDate!: Date | null;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   enrollmentEndDate!: Date | null;
 
   // --- Prerequisites (structural only — enforcement lands with Enrollment/Progress in a later phase) ---

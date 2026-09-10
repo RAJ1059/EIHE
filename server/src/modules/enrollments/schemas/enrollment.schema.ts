@@ -40,10 +40,10 @@ export class Enrollment {
   @Prop({ default: () => new Date() })
   enrolledAt!: Date;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   expiresAt!: Date | null;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   completedAt!: Date | null;
 
   createdAt?: Date;
