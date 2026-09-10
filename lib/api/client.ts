@@ -24,16 +24,29 @@ type ApiFetchOptions = Omit<RequestInit, "body"> & {
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
   const { body, accessToken, withCredentials, headers, ...rest } = options;
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...rest,
-    headers: {
-      "Content-Type": "application/json",
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...headers,
-    },
-    credentials: withCredentials ? "include" : "same-origin",
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...rest,
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...headers,
+      },
+      credentials: withCredentials ? "include" : "same-origin",
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch (networkError) {
+    // fetch() throws (not a rejected HTTP response) when the server is
+    // unreachable, refused the connection, or CORS blocked it — surface
+    // that distinctly instead of letting callers show a generic message.
+    console.error("apiFetch network error:", networkError);
+    throw new ApiError(
+      `Could not reach the API at ${API_URL}. Is the backend running (cd server && npm run start:dev)?`,
+      0,
+      "NETWORK_ERROR",
+    );
+  }
 
   const json = (await response.json().catch(() => null)) as LmsApiResponse<T> | null;
 
