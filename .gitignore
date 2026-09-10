@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# LMS backend (server/) — has its own package.json/node_modules
+/server/node_modules
+/server/dist
