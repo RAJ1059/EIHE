@@ -1,6 +1,10 @@
 import type { LmsApiResponse } from "@/types/lms";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+// Same-origin by default: Next.js proxies /api/* to the LMS backend
+// server-side (see rewrites() in next.config.ts), so the browser never
+// makes a cross-port request. Set NEXT_PUBLIC_API_URL to bypass the proxy
+// and call the backend directly if you ever need to.
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 export class ApiError extends Error {
   status: number;
