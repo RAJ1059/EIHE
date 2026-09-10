@@ -8,6 +8,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { UsersModule } from "./modules/users/users.module";
 import { CategoriesModule } from "./modules/categories/categories.module";
 import { CoursesModule } from "./modules/courses/courses.module";
+import { EnrollmentsModule } from "./modules/enrollments/enrollments.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CoursesModule } from "./modules/courses/courses.module";
     AuthModule,
     CategoriesModule,
     CoursesModule,
+    EnrollmentsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

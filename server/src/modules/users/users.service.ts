@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import { User, type UserDocument } from "./schemas/user.schema";
 import type { Role } from "../../common/enums/role.enum";
+import type { UpdateProfileDto } from "./dto/update-profile.dto";
 
 @Injectable()
 export class UsersService {
@@ -28,5 +29,14 @@ export class UsersService {
     return this.userModel
       .updateOne({ _id: userId }, { $set: { hashedRefreshToken } })
       .exec();
+  }
+
+  async updateProfile(userId: string | Types.ObjectId, dto: UpdateProfileDto) {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) throw new NotFoundException("User not found.");
+
+    if (dto.name !== undefined) user.name = dto.name;
+    await user.save();
+    return user;
   }
 }

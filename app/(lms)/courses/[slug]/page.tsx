@@ -3,17 +3,22 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getCourseBySlug } from "@/lib/api/courses";
+import { enrollInFreeCourse } from "@/lib/api/enrollments";
 import { ApiError } from "@/lib/api/client";
 import type { LmsCourse } from "@/types/lms";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useCart } from "@/lib/cart/CartContext";
 
 export default function CourseDetailPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
+  const { items, addItem } = useCart();
   const [course, setCourse] = useState<LmsCourse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isEnrolling, setIsEnrolling] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +60,35 @@ export default function CourseDetailPage() {
     typeof course.instructor === "object" ? course.instructor.name : "EIHE Faculty";
   const categoryName =
     typeof course.category === "object" ? course.category.name : undefined;
+  const isFree = course.price === 0 && (course.salePrice === null || course.salePrice === 0);
+  const inCart = items.some((item) => item.courseId === course._id);
+
+  async function handleEnrollFree() {
+    if (!accessToken) return;
+    setActionError(null);
+    setIsEnrolling(true);
+    try {
+      await enrollInFreeCourse(accessToken, course!._id);
+      router.push("/account/courses");
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : "Could not enroll right now.");
+    } finally {
+      setIsEnrolling(false);
+    }
+  }
+
+  function handleAddToCart() {
+    addItem({
+      courseId: course!._id,
+      title: course!.title,
+      slug: course!.slug,
+      price: course!.price,
+      salePrice: course!.salePrice,
+      currency: course!.currency,
+      featuredImage: course!.featuredImage,
+    });
+    router.push("/cart");
+  }
 
   return (
     <section className="bg-white">
@@ -73,29 +107,44 @@ export default function CourseDetailPage() {
 
         <p className="mt-6 leading-relaxed text-ink/70">{course.description}</p>
 
-        <div className="mt-10 flex items-center justify-between rounded-2xl border border-ink/10 bg-cream p-6">
-          <div>
-            <p className="text-2xl font-extrabold text-ink">
-              {course.salePrice != null
-                ? `${course.currency} ${course.salePrice}`
-                : course.price === 0
+        <div className="mt-10 rounded-2xl border border-ink/10 bg-cream p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-extrabold text-ink">
+                {isFree
                   ? "Free"
-                  : `${course.currency} ${course.price}`}
-            </p>
-            {course.salePrice != null && (
-              <p className="text-sm text-ink/40 line-through">
-                {course.currency} {course.price}
+                  : course.salePrice != null
+                    ? `${course.currency} ${course.salePrice}`
+                    : `${course.currency} ${course.price}`}
               </p>
+              {!isFree && course.salePrice != null && (
+                <p className="text-sm text-ink/40 line-through">
+                  {course.currency} {course.price}
+                </p>
+              )}
+            </div>
+
+            {!user ? (
+              <FormButton onClick={() => router.push("/login")}>Log In to Enroll</FormButton>
+            ) : isFree ? (
+              <FormButton onClick={handleEnrollFree} loading={isEnrolling}>
+                Enroll for Free
+              </FormButton>
+            ) : inCart ? (
+              <FormButton variant="secondary" onClick={() => router.push("/cart")}>
+                View in Cart
+              </FormButton>
+            ) : (
+              <FormButton onClick={handleAddToCart}>Add to Cart</FormButton>
             )}
           </div>
-          <FormButton
-            onClick={() => {
-              if (!user) router.push("/login");
-              // Enrollment/checkout flow lands in the Payments phase — not built yet.
-            }}
-          >
-            {user ? "Enroll (coming soon)" : "Log In to Enroll"}
-          </FormButton>
+          {actionError && <p className="mt-3 text-sm text-red-600">{actionError}</p>}
+          {!isFree && (
+            <p className="mt-3 text-xs text-ink/50">
+              Checkout requires the Razorpay payments module, which isn&rsquo;t built
+              yet — you can add this to your cart now.
+            </p>
+          )}
         </div>
       </div>
     </section>
