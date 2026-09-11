@@ -60,13 +60,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
         <div className="flex flex-1">
           <aside className="w-56 shrink-0 bg-gradient-to-b from-sage to-[#0f2a43] px-4 py-8">
-            <p className="px-2 text-xs font-semibold tracking-[0.15em] text-white/40 uppercase">
-              Admin
-            </p>
+            <div className="rounded-xl bg-white/10 px-3 py-2.5">
+              <p className="text-[10px] font-semibold tracking-[0.15em] text-white/50 uppercase">
+                Workspace
+              </p>
+              <p className="mt-0.5 text-sm font-semibold text-white">
+                {isManager ? "Admin Portal" : "Instructor Portal"}
+              </p>
+            </div>
             <PortalSidebarNav
               layoutId="admin-nav-active"
               variant="dark"
               items={NAV_ITEMS.filter((item) => !item.managementOnly || isManager)}
+              className="mt-4 space-y-1"
             />
           </aside>
           <div className="flex-1 px-8 py-8">

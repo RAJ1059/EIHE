@@ -152,12 +152,25 @@ body {
 /* Portal dark theme — scoped to .portal-shell (the Admin and Student
    full-screen layouts only), so toggling it never touches the marketing
    site, which uses the same cream/white/ink tokens for light-background
-   text contrast that would break if flipped globally. */
+   text contrast that would break if flipped globally.
+
+   --color-white is deliberately NOT remapped here even though it reads
+   like the obvious "card surface" token: it's also relied on for
+   text-white/border-white/bg-white/10 etc on the sage/teal gradient
+   chrome (top bar, sidebar, primary buttons) which never changes between
+   themes. Remapping the variable made every primary button's text
+   nearly invisible (dark-on-dark) — the actual "card surface" usage is
+   only ever the literal solid .bg-white class, so that's overridden
+   directly instead, the same targeted-class approach used for
+   .text-sage below. */
 [data-theme="dark"] .portal-shell {
   --color-cream: #0b1220;
-  --color-white: #141b2d;
   --color-ink: #e7ecf3;
   color-scheme: dark;
+}
+
+[data-theme="dark"] .portal-shell .bg-white {
+  background-color: #141b2d;
 }
 
 /* text-sage is a dark-navy heading color chosen for light backgrounds —
