@@ -44,7 +44,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           onLogout={() => logout().then(() => router.push("/login"))}
         />
         <div className="flex flex-1 flex-col lg:flex-row">
-          <aside className="w-full shrink-0 bg-gradient-to-b from-sage to-[#1e3f63] px-4 py-4 lg:w-56 lg:py-8">
+          <aside className="w-full shrink-0 bg-gradient-to-b from-sage to-[#040f31] px-4 py-4 lg:w-56 lg:py-8">
             <div className="hidden rounded-xl bg-white/10 px-3 py-2.5 lg:block">
               <p className="text-[10px] font-semibold tracking-[0.15em] text-white/50 uppercase">
                 Workspace

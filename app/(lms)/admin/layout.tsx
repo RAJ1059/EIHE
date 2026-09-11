@@ -59,7 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           onLogout={() => logout().then(() => router.push("/login"))}
         />
         <div className="flex flex-1">
-          <aside className="w-56 shrink-0 bg-gradient-to-b from-sage to-[#1e3f63] px-4 py-8">
+          <aside className="w-56 shrink-0 bg-gradient-to-b from-sage to-[#040f31] px-4 py-8">
             <div className="rounded-xl bg-white/10 px-3 py-2.5">
               <p className="text-[10px] font-semibold tracking-[0.15em] text-white/50 uppercase">
                 Workspace

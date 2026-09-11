@@ -156,9 +156,9 @@ body {
    base; the dark-mode block below layers on top of it via the same
    .portal-shell scope, at higher specificity. */
 .portal-shell {
-  --color-sage: #3368a0;
-  --color-teal: #5b93ab;
-  --color-cream: #f2eee1;
+  --color-sage: #071952;
+  --color-teal: #088395;
+  --color-cream: #ebf4f6;
 }
 
 /* Portal dark theme — scoped to .portal-shell (the Admin and Student
@@ -190,5 +190,5 @@ body {
    this overrides the utility class directly rather than the shared
    --color-sage variable those share. */
 [data-theme="dark"] .portal-shell .text-sage {
-  color: #9cc3e6;
+  color: #6fe0e8;
 }
