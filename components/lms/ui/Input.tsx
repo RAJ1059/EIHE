@@ -2,7 +2,7 @@ import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes 
 import { cn } from "./cn";
 
 const fieldClasses =
-  "w-full rounded-lg border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink placeholder:text-ink/40 transition-colors duration-200 hover:border-ink/20 focus:border-teal focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full rounded-lg border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink placeholder:text-ink/40 transition-all duration-200 hover:border-ink/20 focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function Label({
   htmlFor,

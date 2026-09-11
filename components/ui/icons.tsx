@@ -287,6 +287,25 @@ export function EyeIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function EyeOffIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M3 3l18 18" />
+      <path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 6 10 6a13.4 13.4 0 0 1-3.4 3.9M6.6 6.6C4 8.3 2 11 2 11s3.5 6 10 6c1.3 0 2.5-.2 3.6-.6" />
+      <path d="M9.5 9.6a2.6 2.6 0 0 0 3.6 3.6" />
+    </svg>
+  );
+}
+
 export function CheckIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
