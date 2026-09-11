@@ -48,6 +48,11 @@ export class LessonsController {
 export class AdminLessonsController {
   constructor(private readonly lessonsService: LessonsService) {}
 
+  @Get("lessons")
+  findAll() {
+    return this.lessonsService.findAll();
+  }
+
   @Get("modules/:moduleId/lessons")
   findByModule(@Param("moduleId") moduleId: string) {
     return this.lessonsService.findByModule(moduleId);

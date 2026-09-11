@@ -302,6 +302,50 @@ export type LmsCreateOrderResult = {
   keyId: string;
 };
 
+export type LmsAdminLessonSummary = {
+  _id: string;
+  title: string;
+  slug: string;
+  duration: string;
+  youtubeVideoId: string | null;
+  order: number;
+  course: { _id: string; title: string; slug: string } | null;
+  module: { _id: string; title: string } | null;
+  createdAt: string;
+};
+
+export type LmsAdminQuizSummary = {
+  _id: string;
+  title: string;
+  passingPercentage: number;
+  course: { _id: string; title: string; slug: string } | null;
+  module: string | null;
+  questionCount: number;
+  createdAt: string;
+};
+
+export type LmsCourseSummaryReport = {
+  course: { _id: string; title: string; slug: string; status: LmsCourseStatus };
+  totalEnrollments: number;
+  activeEnrollments: number;
+  totalLessons: number;
+  totalQuizzes: number;
+};
+
+export type LmsCourseDetailReport = {
+  course: { _id: string; title: string; slug: string };
+  totalLessons: number;
+  totalQuizzes: number;
+  totalEnrollments: number;
+  activeEnrollments: number;
+  averageCompletionPercent: number;
+  completedStudents: number;
+};
+
+export type LmsAdminOrder = Omit<LmsOrder, "user"> & {
+  user: { _id: string; name: string; email: string };
+};
+
 export type LmsPaginated<T> = {
   items: T[];
   pagination: {

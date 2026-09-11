@@ -55,6 +55,25 @@ export class QuizzesService {
     return this.quizModel.find({ module: moduleId }).sort({ order: 1 }).exec();
   }
 
+  /** Admin cross-course listing — every quiz, newest course first. */
+  async findAll() {
+    const quizzes = await this.quizModel
+      .find()
+      .sort({ createdAt: -1 })
+      .populate({ path: "course", select: "title slug" })
+      .exec();
+
+    const counts = await this.questionModel.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $group: { _id: "$quiz", count: { $sum: 1 } } },
+    ]);
+    const countByQuiz = new Map(counts.map((c) => [c._id.toString(), c.count]));
+
+    return quizzes.map((quiz) => ({
+      ...quiz.toObject(),
+      questionCount: countByQuiz.get(quiz._id.toString()) ?? 0,
+    }));
+  }
+
   async findByIdOrThrow(id: string) {
     const quiz = await this.quizModel.findById(id).exec();
     if (!quiz) throw new NotFoundException("Quiz not found.");

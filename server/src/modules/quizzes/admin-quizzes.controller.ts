@@ -16,6 +16,11 @@ import { Role } from "../../common/enums/role.enum";
 export class AdminQuizzesController {
   constructor(private readonly quizzesService: QuizzesService) {}
 
+  @Get("quizzes")
+  findAll() {
+    return this.quizzesService.findAll();
+  }
+
   // --- Module-scoped quizzes ---
 
   @Get("modules/:moduleId/quizzes")

@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
+import { Controller, Get, Param, UseGuards } from "@nestjs/common";
 import { AdminStatsService } from "./admin-stats.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
@@ -14,5 +14,22 @@ export class AdminStatsController {
   @Get("overview")
   getOverview() {
     return this.adminStatsService.getOverview();
+  }
+}
+
+@Controller("admin/course-reports")
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.INSTRUCTOR)
+export class AdminCourseReportsController {
+  constructor(private readonly adminStatsService: AdminStatsService) {}
+
+  @Get()
+  listAll() {
+    return this.adminStatsService.listCourseSummaries();
+  }
+
+  @Get(":id")
+  getOne(@Param("id") id: string) {
+    return this.adminStatsService.getCourseReport(id);
   }
 }

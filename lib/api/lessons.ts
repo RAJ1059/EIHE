@@ -1,5 +1,5 @@
 import { apiFetch } from "./client";
-import type { LmsCurriculum, LmsLesson, LmsTopic } from "@/types/lms";
+import type { LmsAdminLessonSummary, LmsCurriculum, LmsLesson, LmsTopic } from "@/types/lms";
 
 export type LessonInput = {
   title: string;
@@ -31,6 +31,11 @@ export function completeLesson(accessToken: string, id: string) {
 
 export function listAdminLessons(accessToken: string, moduleId: string) {
   return apiFetch<LmsLesson[]>(`/admin/modules/${moduleId}/lessons`, { accessToken });
+}
+
+/** Cross-course listing for the admin Lessons page. */
+export function listAllLessons(accessToken: string) {
+  return apiFetch<LmsAdminLessonSummary[]>("/admin/lessons", { accessToken });
 }
 
 export function createLesson(accessToken: string, moduleId: string, input: LessonInput) {

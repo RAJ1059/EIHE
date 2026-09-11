@@ -12,7 +12,12 @@ import { PageLoader } from "@/components/lms/ui/PageLoader";
 const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/courses", label: "Courses" },
+  { href: "/admin/lessons", label: "Lessons" },
+  { href: "/admin/quizzes", label: "Quizzes" },
   { href: "/admin/course-approval", label: "Course Approval", managementOnly: true },
+  { href: "/admin/instructors", label: "Instructors", managementOnly: true },
+  { href: "/admin/orders", label: "Orders", managementOnly: true },
+  { href: "/admin/course-reports", label: "Course Reports", managementOnly: true },
   { href: "/admin/users", label: "Users", managementOnly: true },
 ];
 

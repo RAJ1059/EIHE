@@ -161,6 +161,15 @@ export class OrdersService {
     return order;
   }
 
+  async findByIdForAdmin(id: string) {
+    const order = await this.orderModel
+      .findById(id)
+      .populate({ path: "user", select: "name email" })
+      .exec();
+    if (!order) throw new NotFoundException("Order not found.");
+    return order;
+  }
+
   async findByIdOrThrow(id: string, userId?: string) {
     const order = await this.orderModel.findById(id).exec();
     if (!order) throw new NotFoundException("Order not found.");
@@ -172,5 +181,28 @@ export class OrdersService {
 
   findMine(userId: string) {
     return this.orderModel.find({ user: userId }).sort({ createdAt: -1 }).exec();
+  }
+
+  /** Admin listing — every order, newest first, with the buyer's name/email. */
+  async findAllForAdmin(query: { status?: OrderStatus; page?: number; limit?: number }) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const filter = query.status ? { status: query.status } : {};
+
+    const [items, total] = await Promise.all([
+      this.orderModel
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate({ path: "user", select: "name email" })
+        .exec(),
+      this.orderModel.countDocuments(filter).exec(),
+    ]);
+
+    return {
+      items,
+      pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    };
   }
 }

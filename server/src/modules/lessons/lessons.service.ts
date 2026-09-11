@@ -33,6 +33,16 @@ export class LessonsService {
     return this.lessonModel.find({ module: moduleId }).sort({ order: 1 }).exec();
   }
 
+  /** Admin cross-course listing — every lesson, newest course first. */
+  findAll() {
+    return this.lessonModel
+      .find()
+      .sort({ createdAt: -1 })
+      .populate({ path: "course", select: "title slug" })
+      .populate({ path: "module", select: "title" })
+      .exec();
+  }
+
   async findByIdOrThrow(id: string) {
     const lesson = await this.lessonModel.findById(id).exec();
     if (!lesson) throw new NotFoundException("Lesson not found.");

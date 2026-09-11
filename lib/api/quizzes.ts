@@ -1,5 +1,6 @@
 import { apiFetch } from "./client";
 import type {
+  LmsAdminQuizSummary,
   LmsQuestion,
   LmsQuestionType,
   LmsQuiz,
@@ -89,6 +90,11 @@ export function createFinalQuiz(accessToken: string, courseId: string, input: Qu
     accessToken,
     body: input,
   });
+}
+
+/** Cross-course listing for the admin Quizzes page. */
+export function listAllQuizzes(accessToken: string) {
+  return apiFetch<LmsAdminQuizSummary[]>("/admin/quizzes", { accessToken });
 }
 
 export function getAdminQuiz(accessToken: string, id: string) {

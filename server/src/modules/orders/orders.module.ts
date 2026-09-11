@@ -3,6 +3,7 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { Order, OrderSchema } from "./schemas/order.schema";
 import { OrdersService } from "./orders.service";
 import { OrdersController } from "./orders.controller";
+import { AdminOrdersController } from "./admin-orders.controller";
 import { CoursesModule } from "../courses/courses.module";
 import { EnrollmentsModule } from "../enrollments/enrollments.module";
 
@@ -12,7 +13,7 @@ import { EnrollmentsModule } from "../enrollments/enrollments.module";
     CoursesModule,
     EnrollmentsModule,
   ],
-  controllers: [OrdersController],
+  controllers: [OrdersController, AdminOrdersController],
   providers: [OrdersService],
   exports: [OrdersService],
 })
