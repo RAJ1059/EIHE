@@ -51,3 +51,17 @@ export function meRequest(accessToken: string) {
     accessToken,
   });
 }
+
+export function forgotPasswordRequest(email: string) {
+  return apiFetch<{ message: string }>("/auth/forgot-password", {
+    method: "POST",
+    body: { email },
+  });
+}
+
+export function resetPasswordRequest(token: string, password: string) {
+  return apiFetch<{ reset: true }>("/auth/reset-password", {
+    method: "POST",
+    body: { token, password },
+  });
+}

@@ -16,6 +16,8 @@ import { AuthService } from "./auth.service";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { GoogleAuthDto } from "./dto/google-auth.dto";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import type { AuthenticatedUser } from "./strategies/jwt.strategy";
@@ -50,6 +52,22 @@ export class AuthController {
     const { user, tokens } = await this.authService.loginWithGoogle(dto.idToken);
     this.setRefreshCookie(res, tokens.refreshToken);
     return { user, accessToken: tokens.accessToken };
+  }
+
+  @Post("forgot-password")
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authService.requestPasswordReset(dto.email);
+    return {
+      message: "If an account exists for that email, we've sent a password reset link.",
+    };
+  }
+
+  @Post("reset-password")
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.token, dto.password);
+    return { reset: true };
   }
 
   @Post("refresh")

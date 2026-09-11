@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   ServiceUnavailableException,
@@ -8,12 +9,16 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { OAuth2Client } from "google-auth-library";
 import * as bcrypt from "bcrypt";
+import * as crypto from "crypto";
 import type { StringValue } from "ms";
 import { UsersService } from "../users/users.service";
+import { EmailService } from "../email/email.service";
 import { Role } from "../../common/enums/role.enum";
 import type { RegisterDto } from "./dto/register.dto";
 import type { LoginDto } from "./dto/login.dto";
 import type { AuthenticatedUser } from "./strategies/jwt.strategy";
+
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 const SALT_ROUNDS = 12;
 
@@ -37,6 +42,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   private getGoogleClient(): { client: OAuth2Client; clientId: string } {
@@ -173,6 +179,39 @@ export class AuthService {
 
   async logout(userId: string): Promise<void> {
     await this.usersService.setHashedRefreshToken(userId, null);
+  }
+
+  /**
+   * Always resolves the same way regardless of whether the email matches a
+   * real account, an active one, or one that signs in with Google only —
+   * this endpoint must never be usable to enumerate registered emails.
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user || !user.isActive) return;
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = this.hashResetToken(rawToken);
+    const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+    await this.usersService.setPasswordResetToken(user._id, tokenHash, expiresAt);
+
+    const frontendUrl = this.configService.get<string>("FRONTEND_URL") ?? "http://localhost:3000";
+    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+    await this.emailService.sendPasswordResetEmail(user.email, resetUrl);
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const user = await this.usersService.findByValidResetTokenHash(this.hashResetToken(token));
+    if (!user) {
+      throw new BadRequestException("This reset link is invalid or has expired.");
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await this.usersService.setPassword(user._id, passwordHash);
+  }
+
+  private hashResetToken(token: string): string {
+    return crypto.createHash("sha256").update(token).digest("hex");
   }
 
   verifyRefreshToken(token: string): { sub: string } {

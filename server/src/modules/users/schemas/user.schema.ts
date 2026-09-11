@@ -35,6 +35,15 @@ export class User {
   @Prop({ type: String, default: null, select: false })
   hashedRefreshToken!: string | null;
 
+  // Deterministic hash (sha256, not bcrypt) so a reset request can be
+  // looked up by re-hashing the token from the link — bcrypt's per-hash
+  // salt would make that an equality-lookup impossible.
+  @Prop({ type: String, default: null, select: false })
+  passwordResetTokenHash!: string | null;
+
+  @Prop({ type: Date, default: null, select: false })
+  passwordResetExpiresAt!: Date | null;
+
   createdAt?: Date;
   updatedAt?: Date;
 }

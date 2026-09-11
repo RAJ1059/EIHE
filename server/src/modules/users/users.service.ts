@@ -50,6 +50,40 @@ export class UsersService {
       .exec();
   }
 
+  setPasswordResetToken(userId: string | Types.ObjectId, tokenHash: string, expiresAt: Date) {
+    return this.userModel
+      .updateOne(
+        { _id: userId },
+        { $set: { passwordResetTokenHash: tokenHash, passwordResetExpiresAt: expiresAt } },
+      )
+      .exec();
+  }
+
+  findByValidResetTokenHash(tokenHash: string) {
+    return this.userModel
+      .findOne({
+        passwordResetTokenHash: tokenHash,
+        passwordResetExpiresAt: { $gt: new Date() },
+      })
+      .select("+passwordResetTokenHash +passwordResetExpiresAt")
+      .exec();
+  }
+
+  async setPassword(userId: string | Types.ObjectId, passwordHash: string) {
+    await this.userModel
+      .updateOne(
+        { _id: userId },
+        {
+          $set: { passwordHash },
+          // A completed reset invalidates the token and any existing
+          // session — force a fresh login everywhere.
+          $unset: { passwordResetTokenHash: 1, passwordResetExpiresAt: 1 },
+        },
+      )
+      .exec();
+    await this.setHashedRefreshToken(userId, null);
+  }
+
   async updateProfile(userId: string | Types.ObjectId, dto: UpdateProfileDto) {
     const user = await this.userModel.findById(userId).exec();
     if (!user) throw new NotFoundException("User not found.");
