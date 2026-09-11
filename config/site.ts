@@ -2,13 +2,13 @@
  * Central site configuration — brand, navigation, and metadata defaults.
  */
 export const siteConfig = {
-  name: "Dossios",
+  name: "EIHE",
   logo: "/images/Logo.png",
-  tagline: "Immigration, made visible.",
+  tagline: "Medical Education for the Global Healthcare Workforce",
   description:
-    "Dossios pairs licensed immigration attorneys at Dossios Legal Services with a real-time case platform — visibility for individuals, families, and employers across O-1, EB-1, EB-2 NIW, H-1B, L-1, E-2, and family-based immigration.",
+    "The European Institute For Healthcare Excellence designs and delivers practice-oriented medical education, joint certifications, and institutional training programs aligned with European standards — for doctors, clinics, and healthcare organizations worldwide.",
   ogDescription:
-    "Licensed attorneys lead every case. Our platform gives you a clear, real-time view of where things stand.",
+    "Practice-oriented medical education and certifications aligned with European standards — for healthcare professionals worldwide.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   ogImage: "/images/og-default.png",
   links: {
