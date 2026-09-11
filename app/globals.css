@@ -149,6 +149,18 @@ body {
   outline: none;
 }
 
+/* Portal color theme — a distinct blue palette from the marketing site's
+   own brand colors, scoped to .portal-shell (the Admin and Student
+   full-screen layouts) so it never touches the public site, which keeps
+   its existing sage/teal/cream branding untouched. This is the *light*
+   base; the dark-mode block below layers on top of it via the same
+   .portal-shell scope, at higher specificity. */
+.portal-shell {
+  --color-sage: #3368a0;
+  --color-teal: #5b93ab;
+  --color-cream: #f2eee1;
+}
+
 /* Portal dark theme — scoped to .portal-shell (the Admin and Student
    full-screen layouts only), so toggling it never touches the marketing
    site, which uses the same cream/white/ink tokens for light-background
@@ -178,5 +190,5 @@ body {
    this overrides the utility class directly rather than the shared
    --color-sage variable those share. */
 [data-theme="dark"] .portal-shell .text-sage {
-  color: #7fd8e0;
+  color: #9cc3e6;
 }
