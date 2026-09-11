@@ -44,8 +44,21 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${jakarta.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <body className="flex min-h-full flex-col bg-cream font-sans text-ink">
+        {/* Applies a stored portal theme before paint, avoiding a flash of
+            the wrong theme on /admin and /student — inert everywhere else
+            since the dark overrides only apply within .portal-shell. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('eihe_portal_theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();",
+          }}
+        />
         <SiteChrome>{children}</SiteChrome>
       </body>
     </html>

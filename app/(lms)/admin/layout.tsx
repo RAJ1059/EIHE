@@ -8,6 +8,7 @@ import { PortalTopBar } from "@/components/lms/ui/PortalTopBar";
 import { PortalSidebarNav } from "@/components/lms/ui/PortalSidebarNav";
 import { PortalPageTransition } from "@/components/lms/ui/PortalPageTransition";
 import { PageLoader } from "@/components/lms/ui/PageLoader";
+import { ThemeProvider } from "@/lib/theme/ThemeContext";
 
 const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Dashboard" },
@@ -37,33 +38,41 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [isLoading, user, router]);
 
   if (isLoading || !user || !ADMIN_ROLES.includes(user.role)) {
-    return <PageLoader label="Checking access…" />;
+    return (
+      <ThemeProvider>
+        <div className="portal-shell min-h-screen bg-cream">
+          <PageLoader label="Checking access…" />
+        </div>
+      </ThemeProvider>
+    );
   }
 
   const isManager = MANAGEMENT_ROLES.includes(user.role);
 
   return (
-    <div className="flex min-h-screen flex-col bg-cream">
-      <PortalTopBar
-        label="Admin Portal"
-        userName={user.name}
-        onLogout={() => logout().then(() => router.push("/login"))}
-      />
-      <div className="flex flex-1">
-        <aside className="w-56 shrink-0 bg-gradient-to-b from-sage to-[#0f2a43] px-4 py-8">
-          <p className="px-2 text-xs font-semibold tracking-[0.15em] text-white/40 uppercase">
-            Admin
-          </p>
-          <PortalSidebarNav
-            layoutId="admin-nav-active"
-            variant="dark"
-            items={NAV_ITEMS.filter((item) => !item.managementOnly || isManager)}
-          />
-        </aside>
-        <div className="flex-1 px-8 py-8">
-          <PortalPageTransition>{children}</PortalPageTransition>
+    <ThemeProvider>
+      <div className="portal-shell flex min-h-screen flex-col bg-cream">
+        <PortalTopBar
+          label="Admin Portal"
+          userName={user.name}
+          onLogout={() => logout().then(() => router.push("/login"))}
+        />
+        <div className="flex flex-1">
+          <aside className="w-56 shrink-0 bg-gradient-to-b from-sage to-[#0f2a43] px-4 py-8">
+            <p className="px-2 text-xs font-semibold tracking-[0.15em] text-white/40 uppercase">
+              Admin
+            </p>
+            <PortalSidebarNav
+              layoutId="admin-nav-active"
+              variant="dark"
+              items={NAV_ITEMS.filter((item) => !item.managementOnly || isManager)}
+            />
+          </aside>
+          <div className="flex-1 px-8 py-8">
+            <PortalPageTransition>{children}</PortalPageTransition>
+          </div>
         </div>
       </div>
-    </div>
+    </ThemeProvider>
   );
 }

@@ -148,3 +148,22 @@ body {
 .rich-text-content:focus-visible {
   outline: none;
 }
+
+/* Portal dark theme — scoped to .portal-shell (the Admin and Student
+   full-screen layouts only), so toggling it never touches the marketing
+   site, which uses the same cream/white/ink tokens for light-background
+   text contrast that would break if flipped globally. */
+[data-theme="dark"] .portal-shell {
+  --color-cream: #0b1220;
+  --color-white: #141b2d;
+  --color-ink: #e7ecf3;
+  color-scheme: dark;
+}
+
+/* text-sage is a dark-navy heading color chosen for light backgrounds —
+   bg-sage (the portal top bar/sidebar) must stay dark in both themes, so
+   this overrides the utility class directly rather than the shared
+   --color-sage variable those share. */
+[data-theme="dark"] .portal-shell .text-sage {
+  color: #7fd8e0;
+}

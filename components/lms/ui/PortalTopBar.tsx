@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function PortalTopBar({
   label,
@@ -26,8 +27,9 @@ export function PortalTopBar({
         </motion.div>
         <span className="text-sm font-semibold tracking-wide text-white">{label}</span>
       </Link>
-      <div className="relative z-10 flex items-center gap-4">
+      <div className="relative z-10 flex items-center gap-3">
         <span className="hidden text-sm text-white/85 sm:inline">{userName}</span>
+        <ThemeToggle />
         <motion.button
           type="button"
           onClick={onLogout}
