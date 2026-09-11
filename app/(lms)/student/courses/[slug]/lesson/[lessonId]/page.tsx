@@ -105,7 +105,7 @@ export default function LessonPlayerPage() {
             <p>{error}</p>
             {needsPurchase && (
               <Link
-                href={`/courses/${params.slug}`}
+                href={`/student/courses/browse/${params.slug}`}
                 className="mt-3 inline-block font-semibold underline hover:no-underline"
               >
                 View course →

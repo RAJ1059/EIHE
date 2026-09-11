@@ -11,10 +11,10 @@ import { ThemeProvider } from "@/lib/theme/ThemeContext";
 
 const NAV_ITEMS = [
   { href: "/student/dashboard", label: "Dashboard" },
-  { href: "/courses", label: "All Courses" },
+  { href: "/student/courses/browse", label: "All Courses" },
   { href: "/student/courses", label: "My Courses" },
   { href: "/student/profile", label: "Profile" },
-  { href: "/cart", label: "My Cart" },
+  { href: "/student/cart", label: "My Cart" },
 ];
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {

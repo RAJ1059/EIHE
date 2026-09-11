@@ -71,7 +71,7 @@ export default function MyCoursesPage() {
         <Card className="mt-6 text-center">
           <p className="text-ink/70">You haven&rsquo;t enrolled in any courses yet.</p>
           <Link
-            href="/courses"
+            href="/student/courses/browse"
             className="mt-4 inline-block text-sm font-semibold text-teal hover:underline"
           >
             Browse courses →
