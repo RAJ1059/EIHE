@@ -269,6 +269,9 @@ export type LmsBillingInfo = {
   address: string;
   city: string;
   zip: string;
+  company?: string;
+  apartmentSuite?: string;
+  province?: string;
 };
 
 export type LmsOrderItem = {
@@ -283,6 +286,8 @@ export type LmsOrder = {
   items: LmsOrderItem[];
   billingInfo: LmsBillingInfo;
   subtotal: number;
+  couponCode: string | null;
+  discountAmount: number;
   total: number;
   currency: string;
   status: LmsOrderStatus;
@@ -290,8 +295,32 @@ export type LmsOrder = {
   razorpayPaymentId: string | null;
   paidAt: string | null;
   failureReason: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type LmsCouponDiscountType = "PERCENT" | "FIXED";
+
+export type LmsCoupon = {
+  _id: string;
+  code: string;
+  discountType: LmsCouponDiscountType;
+  discountValue: number;
+  isActive: boolean;
+  maxRedemptions: number | null;
+  timesRedeemed: number;
+  expiresAt: string | null;
+  minOrderAmount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LmsCouponValidation = {
+  code: string;
+  discountType: LmsCouponDiscountType;
+  discountValue: number;
+  discountAmount: number;
 };
 
 export type LmsCreateOrderResult = {

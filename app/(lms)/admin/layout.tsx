@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/admin/course-approval", label: "Course Approval", managementOnly: true },
   { href: "/admin/instructors", label: "Instructors", managementOnly: true },
   { href: "/admin/orders", label: "Orders", managementOnly: true },
+  { href: "/admin/coupons", label: "Coupons", managementOnly: true },
   { href: "/admin/course-reports", label: "Course Reports", managementOnly: true },
   { href: "/admin/users", label: "Users", managementOnly: true },
 ];

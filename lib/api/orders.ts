@@ -10,7 +10,12 @@ import type {
 
 export function createOrder(
   accessToken: string,
-  input: { courseIds: string[]; billingInfo: LmsBillingInfo },
+  input: {
+    courseIds: string[];
+    billingInfo: LmsBillingInfo;
+    couponCode?: string;
+    notes?: string;
+  },
 ) {
   return apiFetch<LmsCreateOrderResult>("/orders", {
     method: "POST",

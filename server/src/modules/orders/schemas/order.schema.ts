@@ -49,6 +49,15 @@ export class BillingInfo {
 
   @Prop({ required: true, trim: true })
   zip!: string;
+
+  @Prop({ type: String, default: null, trim: true })
+  company!: string | null;
+
+  @Prop({ type: String, default: null, trim: true })
+  apartmentSuite!: string | null;
+
+  @Prop({ type: String, default: null, trim: true })
+  province!: string | null;
 }
 
 export const BillingInfoSchema = SchemaFactory.createForClass(BillingInfo);
@@ -68,6 +77,12 @@ export class Order {
 
   @Prop({ required: true, min: 0 })
   subtotal!: number;
+
+  @Prop({ type: String, default: null })
+  couponCode!: string | null;
+
+  @Prop({ default: 0, min: 0 })
+  discountAmount!: number;
 
   @Prop({ required: true, min: 0 })
   total!: number;
@@ -92,6 +107,9 @@ export class Order {
 
   @Prop({ type: String, default: null })
   failureReason!: string | null;
+
+  @Prop({ type: String, default: null, trim: true })
+  notes!: string | null;
 
   createdAt?: Date;
   updatedAt?: Date;

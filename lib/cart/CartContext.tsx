@@ -9,6 +9,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { validateCoupon } from "@/lib/api/coupons";
+import { ApiError } from "@/lib/api/client";
+import type { LmsCouponValidation } from "@/types/lms";
 
 // Pre-checkout cart, backed by localStorage — deliberately client-side only
 // since it holds no server truth (price/ownership are re-validated by the
@@ -30,6 +33,13 @@ type CartState = {
   removeItem: (courseId: string) => void;
   clear: () => void;
   subtotal: number;
+  coupon: LmsCouponValidation | null;
+  couponError: string | null;
+  isApplyingCoupon: boolean;
+  applyCoupon: (code: string) => Promise<void>;
+  removeCoupon: () => void;
+  discountAmount: number;
+  total: number;
 };
 
 const STORAGE_KEY = "eihe_cart";
@@ -68,24 +78,90 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items, hydrated]);
 
+  // A coupon's discount is only valid for the subtotal it was checked
+  // against, so any change to the cart contents invalidates it rather than
+  // silently carrying a stale discount forward.
+  const [coupon, setCoupon] = useState<LmsCouponValidation | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+
   const addItem = useCallback((item: CartItem) => {
     setItems((prev) => (prev.some((i) => i.courseId === item.courseId) ? prev : [...prev, item]));
+    setCoupon(null);
+    setCouponError(null);
   }, []);
 
   const removeItem = useCallback((courseId: string) => {
     setItems((prev) => prev.filter((i) => i.courseId !== courseId));
+    setCoupon(null);
+    setCouponError(null);
   }, []);
 
-  const clear = useCallback(() => setItems([]), []);
+  const clear = useCallback(() => {
+    setItems([]);
+    setCoupon(null);
+    setCouponError(null);
+  }, []);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + (item.salePrice ?? item.price), 0),
     [items],
   );
 
+  const applyCoupon = useCallback(
+    async (code: string) => {
+      setCouponError(null);
+      setIsApplyingCoupon(true);
+      try {
+        const result = await validateCoupon(code, subtotal);
+        setCoupon(result);
+      } catch (err) {
+        setCoupon(null);
+        setCouponError(err instanceof ApiError ? err.message : "Could not apply this coupon.");
+      } finally {
+        setIsApplyingCoupon(false);
+      }
+    },
+    [subtotal],
+  );
+
+  const removeCoupon = useCallback(() => {
+    setCoupon(null);
+    setCouponError(null);
+  }, []);
+
+  const discountAmount = coupon?.discountAmount ?? 0;
+  const total = Math.max(0, subtotal - discountAmount);
+
   const value = useMemo(
-    () => ({ items, addItem, removeItem, clear, subtotal }),
-    [items, addItem, removeItem, clear, subtotal],
+    () => ({
+      items,
+      addItem,
+      removeItem,
+      clear,
+      subtotal,
+      coupon,
+      couponError,
+      isApplyingCoupon,
+      applyCoupon,
+      removeCoupon,
+      discountAmount,
+      total,
+    }),
+    [
+      items,
+      addItem,
+      removeItem,
+      clear,
+      subtotal,
+      coupon,
+      couponError,
+      isApplyingCoupon,
+      applyCoupon,
+      removeCoupon,
+      discountAmount,
+      total,
+    ],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

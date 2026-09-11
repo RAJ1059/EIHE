@@ -151,7 +151,7 @@ export default function CourseDetailPage() {
       currency: course!.currency,
       featuredImage: course!.featuredImage,
     });
-    router.push("/cart");
+    router.push(`/cart?added=${course!._id}`);
   }
 
   // Guests skip the login gate entirely: the course goes straight into the

@@ -4,6 +4,7 @@ import {
   IsArray,
   IsEmail,
   IsMongoId,
+  IsOptional,
   IsString,
   MinLength,
   ValidateNested,
@@ -36,6 +37,18 @@ export class BillingInfoDto {
   @IsString()
   @MinLength(1)
   zip!: string;
+
+  @IsOptional()
+  @IsString()
+  company?: string;
+
+  @IsOptional()
+  @IsString()
+  apartmentSuite?: string;
+
+  @IsOptional()
+  @IsString()
+  province?: string;
 }
 
 export class CreateOrderDto {
@@ -47,4 +60,12 @@ export class CreateOrderDto {
   @ValidateNested()
   @Type(() => BillingInfoDto)
   billingInfo!: BillingInfoDto;
+
+  @IsOptional()
+  @IsString()
+  couponCode?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

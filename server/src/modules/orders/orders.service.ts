@@ -14,6 +14,7 @@ import { Order, OrderStatus, type OrderDocument } from "./schemas/order.schema";
 import { CoursesService } from "../courses/courses.service";
 import { CourseStatus } from "../courses/schemas/course.schema";
 import { EnrollmentsService } from "../enrollments/enrollments.service";
+import { CouponsService } from "../coupons/coupons.service";
 import type { CreateOrderDto } from "./dto/create-order.dto";
 import type { VerifyPaymentDto } from "./dto/verify-payment.dto";
 
@@ -25,6 +26,7 @@ export class OrdersService {
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     private readonly coursesService: CoursesService,
     private readonly enrollmentsService: EnrollmentsService,
+    private readonly couponsService: CouponsService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -80,14 +82,32 @@ export class OrdersService {
       );
     }
 
+    // Never trust a client-computed discount — re-validate the coupon and
+    // recompute the amount ourselves from the server-side subtotal.
+    let couponCode: string | null = null;
+    let discountAmount = 0;
+    if (dto.couponCode) {
+      const result = await this.couponsService.validateForOrder(dto.couponCode, subtotal);
+      couponCode = result.coupon.code;
+      discountAmount = result.discountAmount;
+    }
+
+    const total = Math.round((subtotal - discountAmount) * 100) / 100;
+    if (total <= 0) {
+      throw new BadRequestException("This order's total must be greater than zero after the discount.");
+    }
+
     const order = await this.orderModel.create({
       user: userId,
       items,
       billingInfo: dto.billingInfo,
       subtotal,
-      total: subtotal,
+      couponCode,
+      discountAmount,
+      total,
       currency: courses[0].currency,
       status: OrderStatus.PENDING,
+      notes: dto.notes ?? null,
     });
 
     const razorpay = this.getRazorpay();
@@ -151,6 +171,10 @@ export class OrdersService {
     order.razorpaySignature = dto.razorpay_signature;
     order.paidAt = new Date();
     await order.save();
+
+    if (order.couponCode) {
+      await this.couponsService.redeem(order.couponCode);
+    }
 
     await Promise.all(
       order.items.map((item) =>

@@ -9,9 +9,10 @@ import { createOrder, verifyPayment } from "@/lib/api/orders";
 import { registerRequest } from "@/lib/api/auth";
 import { openRazorpayCheckout } from "@/lib/payments/razorpay";
 import { ApiError } from "@/lib/api/client";
+import { COUNTRIES } from "@/lib/constants/countries";
 import { Card } from "@/components/lms/ui/Card";
 import { FormButton } from "@/components/lms/ui/FormButton";
-import { Input, Label, FieldError } from "@/components/lms/ui/Input";
+import { Input, Label, Select, Textarea, FieldError } from "@/components/lms/ui/Input";
 import type { LmsUser } from "@/types/lms";
 
 export default function CheckoutPage() {
@@ -47,6 +48,11 @@ export default function CheckoutPage() {
   return <CheckoutForm user={user} accessToken={accessToken} items={items} />;
 }
 
+function splitName(fullName: string): [string, string] {
+  const parts = fullName.trim().split(/\s+/);
+  return [parts[0] ?? "", parts.slice(1).join(" ")];
+}
+
 function CheckoutForm({
   user,
   accessToken,
@@ -58,15 +64,35 @@ function CheckoutForm({
 }) {
   const router = useRouter();
   const { setSession } = useAuth();
-  const { subtotal, clear } = useCart();
+  const {
+    subtotal,
+    clear,
+    coupon,
+    couponError,
+    isApplyingCoupon,
+    applyCoupon,
+    removeCoupon,
+    discountAmount,
+    total,
+  } = useCart();
 
-  const [name, setName] = useState(user?.name ?? "");
+  const [initialFirstName, initialLastName] = splitName(user?.name ?? "");
+  const [firstName, setFirstName] = useState(initialFirstName);
+  const [lastName, setLastName] = useState(initialLastName);
   const [email, setEmail] = useState(user?.email ?? "");
-  const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
   const [country, setCountry] = useState("");
   const [address, setAddress] = useState("");
+  const [apartmentSuite, setApartmentSuite] = useState("");
   const [city, setCity] = useState("");
+  const [province, setProvince] = useState("");
   const [zip, setZip] = useState("");
+  const [phone, setPhone] = useState("");
+  const [notes, setNotes] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  const [showCouponField, setShowCouponField] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
 
   // Guests create their account inline instead of being sent to a separate
   // login page — checked by default since an account is how they'll get
@@ -80,6 +106,12 @@ function CheckoutForm({
 
   const currency = items[0]?.currency ?? "INR";
   const needsAccount = !user;
+  const name = `${firstName} ${lastName}`.trim();
+
+  function handleApplyCoupon() {
+    if (!couponInput.trim()) return;
+    applyCoupon(couponInput.trim());
+  }
 
   async function handlePlaceOrder() {
     setError(null);
@@ -108,7 +140,20 @@ function CheckoutForm({
 
       const order = await createOrder(token as string, {
         courseIds: items.map((i) => i.courseId),
-        billingInfo: { name, email, phone, country, address, city, zip },
+        billingInfo: {
+          name,
+          email,
+          phone,
+          country,
+          address,
+          city,
+          zip,
+          company: company || undefined,
+          apartmentSuite: apartmentSuite || undefined,
+          province: province || undefined,
+        },
+        couponCode: coupon?.code,
+        notes: notes || undefined,
       });
 
       const instance = await openRazorpayCheckout({
@@ -161,13 +206,64 @@ function CheckoutForm({
   }
 
   const missingContactOrBilling =
-    !name || !email || !phone || !country || !address || !city || !zip;
+    !firstName || !lastName || !email || !phone || !country || !address || !city || !zip;
   const accountBlocked = needsAccount && (!wantsAccount || password.length < 8);
 
   return (
     <section className="bg-cream">
-      <div className="mx-auto max-w-3xl px-6 py-16">
+      <div className="mx-auto max-w-4xl px-6 py-16">
         <h1 className="text-3xl font-extrabold tracking-tight text-sage">Checkout</h1>
+
+        {needsAccount && (
+          <div className="mt-6 rounded-lg border-l-4 border-teal bg-teal/10 px-5 py-3 text-sm text-ink">
+            Returning customer?{" "}
+            <Link href="/login?next=/checkout" className="font-semibold text-teal hover:underline">
+              Click here to log in
+            </Link>
+          </div>
+        )}
+
+        <div className="mt-3 rounded-lg border-l-4 border-amber-400 bg-amber-50 px-5 py-3 text-sm text-ink">
+          {!showCouponField ? (
+            <button
+              type="button"
+              onClick={() => setShowCouponField(true)}
+              className="font-semibold text-amber-700 hover:underline"
+            >
+              Have a coupon? Click here to enter your code
+            </button>
+          ) : coupon ? (
+            <div className="flex items-center justify-between">
+              <span>
+                Coupon <span className="font-semibold">{coupon.code}</span> applied — you save{" "}
+                {currency} {discountAmount.toLocaleString()}
+              </span>
+              <button onClick={removeCoupon} className="font-semibold text-red-600 hover:underline">
+                Remove
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                placeholder="Coupon code"
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value)}
+                className="sm:max-w-xs"
+              />
+              <FormButton
+                variant="secondary"
+                onClick={handleApplyCoupon}
+                loading={isApplyingCoupon}
+                disabled={!couponInput.trim()}
+              >
+                Apply
+              </FormButton>
+            </div>
+          )}
+          {couponError && showCouponField && !coupon && (
+            <p className="mt-2 text-sm text-red-600">{couponError}</p>
+          )}
+        </div>
 
         {error && (
           <div className="mt-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
@@ -183,19 +279,85 @@ function CheckoutForm({
         <div className="mt-8 grid gap-8 lg:grid-cols-5">
           <div className="space-y-6 lg:col-span-3">
             <Card>
-              <h2 className="font-bold text-ink">Contact Information</h2>
+              <h2 className="font-bold text-ink">Billing Details</h2>
               <div className="mt-4 space-y-3">
                 <div>
-                  <Label htmlFor="co-name">Name</Label>
-                  <Input id="co-name" value={name} onChange={(e) => setName(e.target.value)} />
-                </div>
-                <div>
-                  <Label htmlFor="co-email">Email</Label>
+                  <Label htmlFor="co-email">Email address</Label>
                   <Input
                     id="co-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="co-first-name">First name</Label>
+                    <Input
+                      id="co-first-name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="co-last-name">Last name</Label>
+                    <Input
+                      id="co-last-name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="co-company">Company name (optional)</Label>
+                  <Input id="co-company" value={company} onChange={(e) => setCompany(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="co-country">Country / Region</Label>
+                  <Select
+                    id="co-country"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                  >
+                    <option value="">Select a country…</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="co-address">Street address</Label>
+                  <Input
+                    id="co-address"
+                    placeholder="House number and street name"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                  />
+                  <Input
+                    className="mt-2"
+                    placeholder="Apartment, suite, unit, etc. (optional)"
+                    value={apartmentSuite}
+                    onChange={(e) => setApartmentSuite(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="co-zip">Postcode / ZIP</Label>
+                    <Input id="co-zip" value={zip} onChange={(e) => setZip(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="co-city">Town / City</Label>
+                    <Input id="co-city" value={city} onChange={(e) => setCity(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="co-province">Province / State</Label>
+                  <Input
+                    id="co-province"
+                    value={province}
+                    onChange={(e) => setProvince(e.target.value)}
                   />
                 </div>
                 <div>
@@ -253,33 +415,23 @@ function CheckoutForm({
             )}
 
             <Card>
-              <h2 className="font-bold text-ink">Billing Information</h2>
-              <div className="mt-4 space-y-3">
-                <div>
-                  <Label htmlFor="co-country">Country</Label>
-                  <Input id="co-country" value={country} onChange={(e) => setCountry(e.target.value)} />
-                </div>
-                <div>
-                  <Label htmlFor="co-address">Address</Label>
-                  <Input id="co-address" value={address} onChange={(e) => setAddress(e.target.value)} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="co-city">City</Label>
-                    <Input id="co-city" value={city} onChange={(e) => setCity(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label htmlFor="co-zip">ZIP / Postal Code</Label>
-                    <Input id="co-zip" value={zip} onChange={(e) => setZip(e.target.value)} />
-                  </div>
-                </div>
+              <h2 className="font-bold text-ink">Additional Information</h2>
+              <div className="mt-4">
+                <Label htmlFor="co-notes">Order notes (optional)</Label>
+                <Textarea
+                  id="co-notes"
+                  rows={3}
+                  placeholder="Notes about your enrollment, e.g. special instructions."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
               </div>
             </Card>
           </div>
 
           <div className="lg:col-span-2">
             <Card>
-              <h2 className="font-bold text-ink">Your Course{items.length > 1 ? "s" : ""}</h2>
+              <h2 className="font-bold text-ink">Your Order</h2>
               <ul className="mt-4 space-y-3">
                 {items.map((item) => (
                   <li key={item.courseId} className="flex items-center justify-between text-sm">
@@ -298,25 +450,51 @@ function CheckoutForm({
                     {currency} {subtotal}
                   </span>
                 </div>
+                {coupon && (
+                  <div className="flex justify-between text-teal">
+                    <span>Discount ({coupon.code})</span>
+                    <span>
+                      &minus;{currency} {discountAmount}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between text-base font-bold text-ink">
                   <span>Total</span>
                   <span>
-                    {currency} {subtotal}
+                    {currency} {total}
                   </span>
                 </div>
               </div>
 
+              <div className="mt-4 rounded-xl border border-ink/10 bg-cream p-4 text-xs text-ink/60">
+                <p className="font-semibold text-ink/80">Secure checkout via Razorpay</p>
+                <p className="mt-1">
+                  Card, UPI, and netbanking are all handled inside Razorpay&rsquo;s secure payment
+                  popup — we never see or store your card details.
+                </p>
+              </div>
+
+              <label className="mt-4 flex items-start gap-2 text-xs text-ink/70">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-ink/20 text-teal focus:ring-teal"
+                />
+                I agree to the{" "}
+                <Link href="/terms-conditions" className="font-semibold text-teal hover:underline">
+                  Terms and Conditions
+                </Link>
+              </label>
+
               <FormButton
-                className="mt-6 w-full"
+                className="mt-4 w-full"
                 onClick={handlePlaceOrder}
                 loading={paying}
-                disabled={missingContactOrBilling || accountBlocked}
+                disabled={missingContactOrBilling || accountBlocked || !agreedToTerms}
               >
                 Place Order
               </FormButton>
-              <p className="mt-2 text-center text-xs text-ink/50">
-                You&rsquo;ll complete payment via Razorpay in a secure popup.
-              </p>
             </Card>
           </div>
         </div>
