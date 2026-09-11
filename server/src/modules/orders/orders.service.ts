@@ -15,6 +15,7 @@ import { CoursesService } from "../courses/courses.service";
 import { CourseStatus } from "../courses/schemas/course.schema";
 import { EnrollmentsService } from "../enrollments/enrollments.service";
 import { CouponsService } from "../coupons/coupons.service";
+import { SettingsService } from "../settings/settings.service";
 import type { CreateOrderDto } from "./dto/create-order.dto";
 import type { VerifyPaymentDto } from "./dto/verify-payment.dto";
 
@@ -27,10 +28,16 @@ export class OrdersService {
     private readonly coursesService: CoursesService,
     private readonly enrollmentsService: EnrollmentsService,
     private readonly couponsService: CouponsService,
+    private readonly settingsService: SettingsService,
     private readonly configService: ConfigService,
   ) {}
 
-  private getRazorpay(): Razorpay {
+  private async getRazorpay(): Promise<Razorpay> {
+    const settings = await this.settingsService.getSettings();
+    if (!settings.razorpayEnabled) {
+      throw new ServiceUnavailableException("Razorpay has been disabled by an administrator.");
+    }
+
     const keyId = this.configService.get<string>("RAZORPAY_KEY_ID");
     const keySecret = this.configService.get<string>("RAZORPAY_KEY_SECRET");
 
@@ -92,7 +99,11 @@ export class OrdersService {
       discountAmount = result.discountAmount;
     }
 
-    const total = Math.round((subtotal - discountAmount) * 100) / 100;
+    const discountedSubtotal = subtotal - discountAmount;
+    const settings = await this.settingsService.getSettings();
+    const taxPercent = settings.taxPercent;
+    const taxAmount = Math.round(discountedSubtotal * (taxPercent / 100) * 100) / 100;
+    const total = Math.round((discountedSubtotal + taxAmount) * 100) / 100;
     if (total <= 0) {
       throw new BadRequestException("This order's total must be greater than zero after the discount.");
     }
@@ -104,13 +115,15 @@ export class OrdersService {
       subtotal,
       couponCode,
       discountAmount,
+      taxPercent,
+      taxAmount,
       total,
       currency: courses[0].currency,
       status: OrderStatus.PENDING,
       notes: dto.notes ?? null,
     });
 
-    const razorpay = this.getRazorpay();
+    const razorpay = await this.getRazorpay();
     const razorpayOrder = await razorpay.orders.create({
       amount: Math.round(order.total * 100),
       currency: order.currency,

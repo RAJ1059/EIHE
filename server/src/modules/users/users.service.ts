@@ -18,7 +18,9 @@ export class UsersService {
 
   findByEmail(email: string, includeSecrets = false) {
     const query = this.userModel.findOne({ email: email.toLowerCase().trim() });
-    if (includeSecrets) query.select("+passwordHash +hashedRefreshToken");
+    if (includeSecrets) {
+      query.select("+passwordHash +hashedRefreshToken +failedLoginAttempts +lockedUntil");
+    }
     return query.exec();
   }
 
@@ -37,7 +39,9 @@ export class UsersService {
   }
 
   createFromGoogle(params: { name: string; email: string; googleId: string }) {
-    return this.userModel.create({ ...params, role: Role.STUDENT });
+    // Google has already verified this email — no need to make them do it
+    // again through our own link.
+    return this.userModel.create({ ...params, role: Role.STUDENT, emailVerified: true });
   }
 
   linkGoogleId(userId: string | Types.ObjectId, googleId: string) {
@@ -82,6 +86,49 @@ export class UsersService {
       )
       .exec();
     await this.setHashedRefreshToken(userId, null);
+  }
+
+  recordFailedLogin(userId: string | Types.ObjectId, attempts: number, lockedUntil: Date | null) {
+    return this.userModel
+      .updateOne({ _id: userId }, { $set: { failedLoginAttempts: attempts, lockedUntil } })
+      .exec();
+  }
+
+  resetFailedLogins(userId: string | Types.ObjectId) {
+    return this.userModel
+      .updateOne({ _id: userId }, { $set: { failedLoginAttempts: 0, lockedUntil: null } })
+      .exec();
+  }
+
+  setEmailVerificationToken(userId: string | Types.ObjectId, tokenHash: string, expiresAt: Date) {
+    return this.userModel
+      .updateOne(
+        { _id: userId },
+        { $set: { emailVerificationTokenHash: tokenHash, emailVerificationExpiresAt: expiresAt } },
+      )
+      .exec();
+  }
+
+  findByValidEmailVerificationTokenHash(tokenHash: string) {
+    return this.userModel
+      .findOne({
+        emailVerificationTokenHash: tokenHash,
+        emailVerificationExpiresAt: { $gt: new Date() },
+      })
+      .select("+emailVerificationTokenHash +emailVerificationExpiresAt")
+      .exec();
+  }
+
+  markEmailVerified(userId: string | Types.ObjectId) {
+    return this.userModel
+      .updateOne(
+        { _id: userId },
+        {
+          $set: { emailVerified: true },
+          $unset: { emailVerificationTokenHash: 1, emailVerificationExpiresAt: 1 },
+        },
+      )
+      .exec();
   }
 
   async updateProfile(userId: string | Types.ObjectId, dto: UpdateProfileDto) {

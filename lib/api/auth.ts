@@ -65,3 +65,10 @@ export function resetPasswordRequest(token: string, password: string) {
     body: { token, password },
   });
 }
+
+export function verifyEmailRequest(token: string) {
+  return apiFetch<{ verified: true }>("/auth/verify-email", {
+    method: "POST",
+    body: { token },
+  });
+}

@@ -15,6 +15,7 @@ import { QuizzesModule } from "./modules/quizzes/quizzes.module";
 import { AdminStatsModule } from "./modules/admin-stats/admin-stats.module";
 import { OrdersModule } from "./modules/orders/orders.module";
 import { CouponsModule } from "./modules/coupons/coupons.module";
+import { SettingsModule } from "./modules/settings/settings.module";
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { CouponsModule } from "./modules/coupons/coupons.module";
     AdminStatsModule,
     OrdersModule,
     CouponsModule,
+    SettingsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

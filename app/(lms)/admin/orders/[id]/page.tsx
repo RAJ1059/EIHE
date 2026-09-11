@@ -79,11 +79,35 @@ export default function AdminOrderDetailPage() {
                 </li>
               ))}
             </ul>
-            <div className="mt-3 flex items-center justify-between border-t border-ink/10 pt-3 text-base font-bold text-ink">
-              <span>Total</span>
-              <span>
-                {order.currency} {order.total}
-              </span>
+            <div className="mt-3 space-y-1 border-t border-ink/10 pt-3 text-sm">
+              <div className="flex items-center justify-between text-ink/70">
+                <span>Subtotal</span>
+                <span>
+                  {order.currency} {order.subtotal}
+                </span>
+              </div>
+              {order.discountAmount > 0 && (
+                <div className="flex items-center justify-between text-teal">
+                  <span>Discount{order.couponCode ? ` (${order.couponCode})` : ""}</span>
+                  <span>
+                    &minus;{order.currency} {order.discountAmount}
+                  </span>
+                </div>
+              )}
+              {order.taxAmount > 0 && (
+                <div className="flex items-center justify-between text-ink/70">
+                  <span>Tax ({order.taxPercent}%)</span>
+                  <span>
+                    {order.currency} {order.taxAmount}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-base font-bold text-ink">
+                <span>Total</span>
+                <span>
+                  {order.currency} {order.total}
+                </span>
+              </div>
             </div>
 
             {order.failureReason && (

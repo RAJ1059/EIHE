@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useCart, type CartItem } from "@/lib/cart/CartContext";
 import { createOrder, verifyPayment } from "@/lib/api/orders";
 import { registerRequest } from "@/lib/api/auth";
+import { getPublicSettings } from "@/lib/api/settings";
 import { openRazorpayCheckout } from "@/lib/payments/razorpay";
 import { ApiError } from "@/lib/api/client";
 import { COUNTRIES } from "@/lib/constants/countries";
@@ -103,10 +104,19 @@ function CheckoutForm({
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cancelled, setCancelled] = useState(false);
+  const [taxPercent, setTaxPercent] = useState(0);
+
+  useEffect(() => {
+    getPublicSettings()
+      .then((settings) => setTaxPercent(settings.taxPercent))
+      .catch(() => {});
+  }, []);
 
   const currency = items[0]?.currency ?? "INR";
   const needsAccount = !user;
   const name = `${firstName} ${lastName}`.trim();
+  const taxAmount = Math.round(total * (taxPercent / 100) * 100) / 100;
+  const totalWithTax = Math.round((total + taxAmount) * 100) / 100;
 
   function handleApplyCoupon() {
     if (!couponInput.trim()) return;
@@ -458,10 +468,18 @@ function CheckoutForm({
                     </span>
                   </div>
                 )}
+                {taxPercent > 0 && (
+                  <div className="flex justify-between text-ink/70">
+                    <span>Tax ({taxPercent}%)</span>
+                    <span>
+                      {currency} {taxAmount}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between text-base font-bold text-ink">
                   <span>Total</span>
                   <span>
-                    {currency} {total}
+                    {currency} {totalWithTax}
                   </span>
                 </div>
               </div>

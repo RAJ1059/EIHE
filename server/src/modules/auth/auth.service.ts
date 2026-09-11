@@ -13,12 +13,15 @@ import * as crypto from "crypto";
 import type { StringValue } from "ms";
 import { UsersService } from "../users/users.service";
 import { EmailService } from "../email/email.service";
+import { SettingsService } from "../settings/settings.service";
 import { Role } from "../../common/enums/role.enum";
 import type { RegisterDto } from "./dto/register.dto";
 import type { LoginDto } from "./dto/login.dto";
 import type { AuthenticatedUser } from "./strategies/jwt.strategy";
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
 
 const SALT_ROUNDS = 12;
 
@@ -43,6 +46,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   private getGoogleClient(): { client: OAuth2Client; clientId: string } {
@@ -59,6 +63,11 @@ export class AuthService {
   }
 
   async loginWithGoogle(idToken: string): Promise<{ user: PublicUser; tokens: AuthTokens }> {
+    const settings = await this.settingsService.getSettings();
+    if (!settings.googleOAuthEnabled) {
+      throw new ServiceUnavailableException("Google sign-in has been disabled by an administrator.");
+    }
+
     const { client, clientId } = this.getGoogleClient();
 
     let payload: { sub: string; email?: string; email_verified?: boolean; name?: string };
@@ -119,6 +128,15 @@ export class AuthService {
       role: Role.STUDENT,
     });
 
+    // Best-effort — a transient email failure shouldn't block account
+    // creation. The token is only ever required to log in if an admin has
+    // turned Settings.requireEmailVerification on.
+    try {
+      await this.sendVerificationEmail(user._id.toString(), user.email);
+    } catch {
+      // Swallowed intentionally — see comment above.
+    }
+
     const tokens = await this.issueTokens({
       userId: user._id.toString(),
       email: user.email,
@@ -135,16 +153,39 @@ export class AuthService {
       throw new UnauthorizedException("Invalid email or password.");
     }
 
+    if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+      throw new UnauthorizedException(
+        `Too many failed attempts. Try again after ${user.lockedUntil.toLocaleTimeString()}.`,
+      );
+    }
+
     if (!user.passwordHash) {
       throw new UnauthorizedException(
         "This account signs in with Google. Use the Sign in with Google button instead.",
       );
     }
 
+    const settings = await this.settingsService.getSettings();
     const passwordMatches = await bcrypt.compare(dto.password, user.passwordHash);
     if (!passwordMatches) {
+      const attempts = user.failedLoginAttempts + 1;
+      const lockedUntil =
+        attempts >= settings.maxLoginAttempts ? new Date(Date.now() + LOCKOUT_DURATION_MS) : null;
+      await this.usersService.recordFailedLogin(
+        user._id,
+        lockedUntil ? 0 : attempts,
+        lockedUntil,
+      );
       throw new UnauthorizedException("Invalid email or password.");
     }
+
+    if (settings.requireEmailVerification && !user.emailVerified) {
+      throw new UnauthorizedException(
+        "Please verify your email before logging in — check your inbox for the verification link.",
+      );
+    }
+
+    await this.usersService.resetFailedLogins(user._id);
 
     const tokens = await this.issueTokens({
       userId: user._id.toString(),
@@ -191,7 +232,7 @@ export class AuthService {
     if (!user || !user.isActive) return;
 
     const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = this.hashResetToken(rawToken);
+    const tokenHash = this.hashToken(rawToken);
     const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
     await this.usersService.setPasswordResetToken(user._id, tokenHash, expiresAt);
 
@@ -201,7 +242,7 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    const user = await this.usersService.findByValidResetTokenHash(this.hashResetToken(token));
+    const user = await this.usersService.findByValidResetTokenHash(this.hashToken(token));
     if (!user) {
       throw new BadRequestException("This reset link is invalid or has expired.");
     }
@@ -210,7 +251,28 @@ export class AuthService {
     await this.usersService.setPassword(user._id, passwordHash);
   }
 
-  private hashResetToken(token: string): string {
+  async verifyEmail(token: string): Promise<void> {
+    const user = await this.usersService.findByValidEmailVerificationTokenHash(
+      this.hashToken(token),
+    );
+    if (!user) {
+      throw new BadRequestException("This verification link is invalid or has expired.");
+    }
+    await this.usersService.markEmailVerified(user._id);
+  }
+
+  private async sendVerificationEmail(userId: string, email: string): Promise<void> {
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = this.hashToken(rawToken);
+    const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
+    await this.usersService.setEmailVerificationToken(userId, tokenHash, expiresAt);
+
+    const frontendUrl = this.configService.get<string>("FRONTEND_URL") ?? "http://localhost:3000";
+    const verifyUrl = `${frontendUrl}/verify-email?token=${rawToken}`;
+    await this.emailService.sendVerificationEmail(email, verifyUrl);
+  }
+
+  private hashToken(token: string): string {
     return crypto.createHash("sha256").update(token).digest("hex");
   }
 
@@ -226,11 +288,11 @@ export class AuthService {
 
   private async issueTokens(user: AuthenticatedUser): Promise<AuthTokens> {
     const payload = { sub: user.userId };
+    const settings = await this.settingsService.getSettings();
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: this.configService.getOrThrow<string>("JWT_SECRET"),
-      expiresIn: (this.configService.get<string>("JWT_ACCESS_EXPIRES_IN") ??
-        "15m") as StringValue,
+      expiresIn: `${settings.sessionTimeoutMinutes}m` as StringValue,
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {

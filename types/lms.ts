@@ -288,6 +288,8 @@ export type LmsOrder = {
   subtotal: number;
   couponCode: string | null;
   discountAmount: number;
+  taxPercent: number;
+  taxAmount: number;
   total: number;
   currency: string;
   status: LmsOrderStatus;
@@ -373,6 +375,31 @@ export type LmsCourseDetailReport = {
 
 export type LmsAdminOrder = Omit<LmsOrder, "user"> & {
   user: { _id: string; name: string; email: string };
+};
+
+export type LmsSiteSettings = {
+  _id: string;
+  siteName: string;
+  tagline: string;
+  contactEmail: string;
+  supportEmail: string;
+  logoUrl: string;
+  currency: string;
+  taxPercent: number;
+  razorpayEnabled: boolean;
+  stripeEnabled: boolean;
+  stripePublishableKey: string;
+  sessionTimeoutMinutes: number;
+  maxLoginAttempts: number;
+  requireEmailVerification: boolean;
+  googleOAuthEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LmsPublicSettings = {
+  currency: string;
+  taxPercent: number;
 };
 
 export type LmsPaginated<T> = {

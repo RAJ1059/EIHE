@@ -7,6 +7,7 @@ import { AdminOrdersController } from "./admin-orders.controller";
 import { CoursesModule } from "../courses/courses.module";
 import { EnrollmentsModule } from "../enrollments/enrollments.module";
 import { CouponsModule } from "../coupons/coupons.module";
+import { SettingsModule } from "../settings/settings.module";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { CouponsModule } from "../coupons/coupons.module";
     CoursesModule,
     EnrollmentsModule,
     CouponsModule,
+    SettingsModule,
   ],
   controllers: [OrdersController, AdminOrdersController],
   providers: [OrdersService],

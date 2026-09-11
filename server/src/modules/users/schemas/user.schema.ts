@@ -44,6 +44,26 @@ export class User {
   @Prop({ type: Date, default: null, select: false })
   passwordResetExpiresAt!: Date | null;
 
+  // Login lockout — reset on every successful login, incremented on every
+  // failed one, checked before the password is even compared.
+  @Prop({ default: 0, select: false })
+  failedLoginAttempts!: number;
+
+  @Prop({ type: Date, default: null, select: false })
+  lockedUntil!: Date | null;
+
+  // Google-verified accounts are trusted immediately; a plain
+  // email/password registration starts unverified and only actually
+  // blocks login while Settings.requireEmailVerification is on.
+  @Prop({ default: false })
+  emailVerified!: boolean;
+
+  @Prop({ type: String, default: null, select: false })
+  emailVerificationTokenHash!: string | null;
+
+  @Prop({ type: Date, default: null, select: false })
+  emailVerificationExpiresAt!: Date | null;
+
   createdAt?: Date;
   updatedAt?: Date;
 }

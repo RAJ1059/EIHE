@@ -59,4 +59,24 @@ export class EmailService {
       `,
     });
   }
+
+  async sendVerificationEmail(to: string, verifyUrl: string): Promise<void> {
+    const transporter = this.getTransporter();
+    const from = this.configService.get<string>("SMTP_FROM") ?? "EIHE <no-reply@europeanihe.com>";
+
+    if (!transporter) {
+      this.logger.warn(`Verification email for ${to} (SMTP not configured, not emailed): ${verifyUrl}`);
+      return;
+    }
+
+    await transporter.sendMail({
+      from,
+      to,
+      subject: "Verify your EIHE email address",
+      html: `
+        <p>Welcome to EIHE! Please verify your email address to finish setting up your account.</p>
+        <p><a href="${verifyUrl}">Click here to verify your email</a>. This link expires in 24 hours.</p>
+      `,
+    });
+  }
 }

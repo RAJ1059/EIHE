@@ -84,6 +84,15 @@ export class Order {
   @Prop({ default: 0, min: 0 })
   discountAmount!: number;
 
+  // Snapshots the site's tax rate at the moment of purchase — a later
+  // change to Settings must never alter what an existing order says was
+  // charged.
+  @Prop({ default: 0, min: 0 })
+  taxPercent!: number;
+
+  @Prop({ default: 0, min: 0 })
+  taxAmount!: number;
+
   @Prop({ required: true, min: 0 })
   total!: number;
 
