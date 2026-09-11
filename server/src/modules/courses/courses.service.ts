@@ -8,6 +8,16 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { FilterQuery, Model } from "mongoose";
 import { Course, CourseStatus, type CourseDocument } from "./schemas/course.schema";
+import { Module, type ModuleDocument } from "../modules/schemas/module.schema";
+import { Lesson, type LessonDocument } from "../lessons/schemas/lesson.schema";
+import { Quiz, type QuizDocument } from "../quizzes/schemas/quiz.schema";
+import { Question, type QuestionDocument } from "../quizzes/schemas/question.schema";
+import { QuizAttempt, type QuizAttemptDocument } from "../quizzes/schemas/quiz-attempt.schema";
+import {
+  LessonProgress,
+  type LessonProgressDocument,
+} from "../lesson-progress/schemas/lesson-progress.schema";
+import { Enrollment, type EnrollmentDocument } from "../enrollments/schemas/enrollment.schema";
 import { slugify } from "../../common/utils/slugify";
 import { Role } from "../../common/enums/role.enum";
 import type { CreateCourseDto } from "./dto/create-course.dto";
@@ -24,6 +34,14 @@ const POPULATE = [
 export class CoursesService {
   constructor(
     @InjectModel(Course.name) private readonly courseModel: Model<CourseDocument>,
+    @InjectModel(Module.name) private readonly moduleModel: Model<ModuleDocument>,
+    @InjectModel(Lesson.name) private readonly lessonModel: Model<LessonDocument>,
+    @InjectModel(Quiz.name) private readonly quizModel: Model<QuizDocument>,
+    @InjectModel(Question.name) private readonly questionModel: Model<QuestionDocument>,
+    @InjectModel(QuizAttempt.name) private readonly quizAttemptModel: Model<QuizAttemptDocument>,
+    @InjectModel(LessonProgress.name)
+    private readonly lessonProgressModel: Model<LessonProgressDocument>,
+    @InjectModel(Enrollment.name) private readonly enrollmentModel: Model<EnrollmentDocument>,
   ) {}
 
   async create(dto: CreateCourseDto, requesterRole: Role) {
@@ -45,8 +63,30 @@ export class CoursesService {
     return course;
   }
 
+  /**
+   * Deleting works regardless of status (draft, published, archived — all
+   * of it) — this is an admin action, not a status transition. Everything
+   * that hangs off the course is cleaned up so nothing orphaned is left
+   * behind: modules, lessons, quizzes (and their questions), progress,
+   * attempts, and enrollments. Paid Orders are deliberately left alone —
+   * they're a financial record of what was actually charged, snapshotted
+   * at purchase time, and should outlive the course they were for.
+   */
   async remove(id: string) {
     const course = await this.findByIdOrThrow(id);
+
+    const quizIds = await this.quizModel.distinct("_id", { course: id }).exec();
+
+    await Promise.all([
+      this.moduleModel.deleteMany({ course: id }).exec(),
+      this.lessonModel.deleteMany({ course: id }).exec(),
+      this.quizModel.deleteMany({ course: id }).exec(),
+      this.questionModel.deleteMany({ quiz: { $in: quizIds } }).exec(),
+      this.quizAttemptModel.deleteMany({ course: id }).exec(),
+      this.lessonProgressModel.deleteMany({ course: id }).exec(),
+      this.enrollmentModel.deleteMany({ course: id }).exec(),
+    ]);
+
     await course.deleteOne();
   }
 

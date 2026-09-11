@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
+  deleteCourse,
   getAdminCourse,
   submitCourseForReview,
   updateCourse,
@@ -22,6 +23,7 @@ export default function EditCoursePage() {
   const [course, setCourse] = useState<LmsCourse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submittingForReview, setSubmittingForReview] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -46,6 +48,26 @@ export default function EditCoursePage() {
       setError(err instanceof ApiError ? err.message : "Could not submit this course for review.");
     } finally {
       setSubmittingForReview(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!accessToken || !course) return;
+    const confirmed = window.confirm(
+      course.status === "PUBLISHED"
+        ? `"${course.title}" is published — deleting it permanently removes its modules, lessons, quizzes, and every student's enrollment and progress. This can't be undone. Delete it anyway?`
+        : `Permanently delete "${course.title}" and all of its content? This can't be undone.`,
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setIsDeleting(true);
+    try {
+      await deleteCourse(accessToken, params.id);
+      router.push("/admin/courses");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not delete this course.");
+      setIsDeleting(false);
     }
   }
 
@@ -82,6 +104,25 @@ export default function EditCoursePage() {
           canPublish={canPublish}
         />
       </div>
+
+      {canPublish && (
+        <Card className="mt-8 max-w-3xl border-red-100 bg-red-50/50">
+          <h2 className="font-bold text-red-700">Danger Zone</h2>
+          <p className="mt-1 text-sm text-ink/70">
+            Permanently delete this course, its modules, lessons, quizzes, and every student&rsquo;s
+            enrollment and progress. This works regardless of status — draft, published, or
+            archived — and can&rsquo;t be undone.
+          </p>
+          <FormButton
+            variant="danger"
+            className="mt-4"
+            onClick={handleDelete}
+            loading={isDeleting}
+          >
+            Delete Course
+          </FormButton>
+        </Card>
+      )}
     </div>
   );
 }

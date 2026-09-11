@@ -638,3 +638,208 @@ export function PersonIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function ListBulletIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <circle cx="4" cy="6" r="1" fill="currentColor" stroke="none" />
+      <circle cx="4" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="4" cy="18" r="1" fill="currentColor" stroke="none" />
+      <path d="M9 6h11M9 12h11M9 18h11" />
+    </svg>
+  );
+}
+
+export function ListOrderedIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M9 6h11M9 12h11M9 18h11" />
+      <path d="M4 4.5v3M4 7.5H3.3M3.3 15.5h1.8c0-1-1.8-1.2-1.8-2.2 0-.6.5-1 1.1-1s1 .4 1 1M3 20.5h2v-2.2H3.6" />
+    </svg>
+  );
+}
+
+export function QuoteIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M9.5 6C6.5 7 5 9.2 5 12.2c0 2.3 1.4 3.8 3.2 3.8 1.6 0 2.8-1.2 2.8-2.7 0-1.4-1-2.5-2.3-2.5-.2 0-.4 0-.5.1.1-1.7 1.2-3 3-3.7L9.5 6Zm9 0c-3 1-4.5 3.2-4.5 6.2 0 2.3 1.4 3.8 3.2 3.8 1.6 0 2.8-1.2 2.8-2.7 0-1.4-1-2.5-2.3-2.5-.2 0-.4 0-.5.1.1-1.7 1.2-3 3-3.7L18.5 6Z" />
+    </svg>
+  );
+}
+
+export function TableIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" />
+      <path d="M3.5 9.5h17M3.5 14.5h17M10 4.5v15M15.5 4.5v15" />
+    </svg>
+  );
+}
+
+export function AlignLeftIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M4 6h16M4 12h10M4 18h13" />
+    </svg>
+  );
+}
+
+export function AlignCenterIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M4 6h16M7 12h10M5.5 18h13" />
+    </svg>
+  );
+}
+
+export function AlignRightIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M4 6h16M10 12h10M7 18h13" />
+    </svg>
+  );
+}
+
+export function UndoIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M7 7 3.5 10.5 7 14" />
+      <path d="M3.5 10.5H14a6 6 0 1 1 0 12H8" />
+    </svg>
+  );
+}
+
+export function RedoIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M17 7l3.5 3.5L17 14" />
+      <path d="M20.5 10.5H10a6 6 0 1 0 0 12h6" />
+    </svg>
+  );
+}
+
+export function LinkIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M10 14a4 4 0 0 0 5.7.4l2.6-2.6a4 4 0 0 0-5.7-5.7l-1.5 1.4" />
+      <path d="M14 10a4 4 0 0 0-5.7-.4L5.7 12.2a4 4 0 0 0 5.7 5.7l1.5-1.4" />
+    </svg>
+  );
+}
+
+export function ImagePlusIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <circle cx="9" cy="10" r="1.5" />
+      <path d="m5 17 4.5-4.5a1.5 1.5 0 0 1 2.1 0L15 16" />
+      <path d="M14.5 13.5 16 12a1.5 1.5 0 0 1 2.1 0l2.4 2.4" />
+    </svg>
+  );
+}
+
+export function TrashIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M4 7h16" />
+      <path d="M9 7V4.8c0-.4.4-.8.8-.8h4.4c.4 0 .8.4.8.8V7" />
+      <path d="M6 7l1 12.2c0 .9.8 1.8 1.8 1.8h6.4c1 0 1.8-.9 1.8-1.8L18 7" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
+  );
+}

@@ -32,6 +32,7 @@ import type { LmsCourse, LmsLesson, LmsModule, LmsQuiz } from "@/types/lms";
 import { Card } from "@/components/lms/ui/Card";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { Input, Label, Textarea } from "@/components/lms/ui/Input";
+import { RichTextEditor } from "@/components/lms/ui/RichTextEditor";
 
 type ModuleWithContent = LmsModule & { lessons: LmsLesson[]; quizzes: LmsQuiz[] };
 
@@ -604,11 +605,10 @@ function LessonForm({
       </div>
       <div>
         <Label htmlFor="lesson-content">Lesson notes / content</Label>
-        <Textarea
-          id="lesson-content"
-          rows={4}
+        <RichTextEditor
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
+          placeholder="Write the lesson notes students will read alongside the video…"
         />
       </div>
       <div className="flex flex-wrap gap-4 text-sm text-ink">

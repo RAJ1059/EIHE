@@ -9,6 +9,7 @@ import { ApiError } from "@/lib/api/client";
 import type { LmsCourse, LmsCurriculum } from "@/types/lms";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { Card } from "@/components/lms/ui/Card";
+import { RichTextContent } from "@/components/lms/ui/RichTextContent";
 import { cn } from "@/components/lms/ui/cn";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useCart } from "@/lib/cart/CartContext";
@@ -209,7 +210,7 @@ export default function CourseDetailPage() {
 
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 lg:grid-cols-[1fr_320px] lg:py-16">
         <div className="min-w-0">
-          <p className="leading-relaxed text-ink/70">{course.description}</p>
+          <RichTextContent html={course.description} className="text-ink/70" />
 
           {modules.length > 0 && (
             <div className="mt-12">

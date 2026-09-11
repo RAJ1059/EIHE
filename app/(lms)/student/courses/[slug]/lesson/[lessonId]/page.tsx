@@ -10,6 +10,7 @@ import type { LmsCurriculum, LmsLesson } from "@/types/lms";
 import { YouTubePlayer } from "@/components/lms/course/YouTubePlayer";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { CurriculumSidebar } from "@/components/lms/course/CurriculumSidebar";
+import { RichTextContent } from "@/components/lms/ui/RichTextContent";
 
 export default function LessonPlayerPage() {
   const params = useParams<{ slug: string; lessonId: string }>();
@@ -110,7 +111,7 @@ export default function LessonPlayerPage() {
             <h1 className="mt-6 text-2xl font-bold text-ink">{lesson.title}</h1>
             {lesson.description && <p className="mt-2 text-ink/70">{lesson.description}</p>}
             {lesson.content && (
-              <p className="mt-4 whitespace-pre-wrap text-sm text-ink/70">{lesson.content}</p>
+              <RichTextContent html={lesson.content} className="mt-4 text-sm text-ink/70" />
             )}
 
             {lesson.topics.length > 0 && (

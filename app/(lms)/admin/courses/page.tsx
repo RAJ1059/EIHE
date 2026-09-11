@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { listAdminCourses } from "@/lib/api/courses";
+import { deleteCourse, listAdminCourses } from "@/lib/api/courses";
 import { ApiError } from "@/lib/api/client";
 import type { LmsCourse } from "@/types/lms";
 import { Reveal } from "@/components/motion/Reveal";
@@ -20,6 +20,7 @@ export default function AdminCoursesPage() {
   const { accessToken } = useAuth();
   const [courses, setCourses] = useState<LmsCourse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -38,6 +39,27 @@ export default function AdminCoursesPage() {
       cancelled = true;
     };
   }, [accessToken]);
+
+  async function handleDelete(course: LmsCourse) {
+    if (!accessToken) return;
+    const confirmed = window.confirm(
+      course.status === "PUBLISHED"
+        ? `"${course.title}" is published — deleting it permanently removes its modules, lessons, quizzes, and every student's enrollment and progress. This can't be undone. Delete it anyway?`
+        : `Permanently delete "${course.title}" and all of its content? This can't be undone.`,
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setDeletingId(course._id);
+    try {
+      await deleteCourse(accessToken, course._id);
+      setCourses((prev) => prev?.filter((c) => c._id !== course._id) ?? prev);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not delete this course.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div>
@@ -107,10 +129,17 @@ export default function AdminCoursesPage() {
                   </Link>
                   <Link
                     href={`/admin/courses/${course._id}/edit`}
-                    className="text-sm font-semibold text-teal hover:underline"
+                    className="mr-4 text-sm font-semibold text-teal hover:underline"
                   >
                     Edit
                   </Link>
+                  <button
+                    onClick={() => handleDelete(course)}
+                    disabled={deletingId === course._id}
+                    className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
+                  >
+                    {deletingId === course._id ? "Deleting…" : "Delete"}
+                  </button>
                 </td>
               </tr>
             ))}

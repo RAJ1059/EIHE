@@ -33,9 +33,11 @@ export class CreateCourseDto {
   @MaxLength(300)
   shortDescription?: string;
 
+  // Rich-text HTML from the admin editor (tables/images/links add markup
+  // overhead a plain-text cap wouldn't need to account for).
   @IsOptional()
   @IsString()
-  @MaxLength(20000)
+  @MaxLength(50000)
   description?: string;
 
   @IsOptional()

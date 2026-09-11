@@ -5,7 +5,8 @@ import { listCategories, type CourseInput } from "@/lib/api/courses";
 import type { LmsCategory, LmsCourse } from "@/types/lms";
 import { ApiError } from "@/lib/api/client";
 import { FormButton } from "@/components/lms/ui/FormButton";
-import { Input, Label, Select, Textarea, FieldError } from "@/components/lms/ui/Input";
+import { Input, Label, Select, FieldError } from "@/components/lms/ui/Input";
+import { RichTextEditor } from "@/components/lms/ui/RichTextEditor";
 
 export function CourseForm({
   initialCourse,
@@ -72,7 +73,7 @@ export function CourseForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
+    <form onSubmit={handleSubmit} className="max-w-3xl space-y-5">
       <div>
         <Label htmlFor="title">Title</Label>
         <Input
@@ -95,11 +96,10 @@ export function CourseForm({
 
       <div>
         <Label htmlFor="description">Full description</Label>
-        <Textarea
-          id="description"
-          rows={6}
+        <RichTextEditor
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={setDescription}
+          placeholder="Describe what this course covers…"
         />
       </div>
 
