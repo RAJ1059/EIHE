@@ -20,6 +20,14 @@ export function loginRequest(input: { email: string; password: string }) {
   });
 }
 
+export function googleAuthRequest(idToken: string) {
+  return apiFetch<AuthResult>("/auth/google", {
+    method: "POST",
+    body: { idToken },
+    withCredentials: true,
+  });
+}
+
 export function refreshRequest() {
   return apiFetch<RefreshResult>("/auth/refresh", {
     method: "POST",

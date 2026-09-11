@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  googleAuthRequest,
   loginRequest,
   logoutRequest,
   meRequest,
@@ -26,6 +27,7 @@ type AuthState = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<LmsUser>;
   register: (name: string, email: string, password: string) => Promise<LmsUser>;
+  loginWithGoogle: (idToken: string) => Promise<LmsUser>;
   logout: () => Promise<void>;
 };
 
@@ -77,6 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result.user;
   }, []);
 
+  const loginWithGoogle = useCallback(async (idToken: string) => {
+    const result = await googleAuthRequest(idToken);
+    setAccessToken(result.accessToken);
+    setUser(result.user);
+    return result.user;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       if (accessToken) await logoutRequest(accessToken);
@@ -90,8 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [accessToken]);
 
   const value = useMemo(
-    () => ({ user, accessToken, isLoading, login, register, logout }),
-    [user, accessToken, isLoading, login, register, logout],
+    () => ({ user, accessToken, isLoading, login, register, loginWithGoogle, logout }),
+    [user, accessToken, isLoading, login, register, loginWithGoogle, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

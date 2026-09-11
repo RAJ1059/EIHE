@@ -14,8 +14,13 @@ export class User {
   @Prop({ required: true, unique: true, lowercase: true, trim: true, index: true })
   email!: string;
 
-  @Prop({ required: true, select: false })
-  passwordHash!: string;
+  // Optional: accounts created via Google Sign-In have no password.
+  @Prop({ type: String, default: null, select: false })
+  passwordHash!: string | null;
+
+  // Set only for accounts created or linked via Google Sign-In.
+  @Prop({ type: String, default: null, index: { unique: true, sparse: true } })
+  googleId!: string | null;
 
   @Prop({ type: String, enum: Role, default: Role.STUDENT })
   role!: Role;

@@ -9,6 +9,7 @@ import { ApiError } from "@/lib/api/client";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { Input, Label, FieldError } from "@/components/lms/ui/Input";
 import { Card } from "@/components/lms/ui/Card";
+import { GoogleSignInButton } from "@/components/lms/ui/GoogleSignInButton";
 
 // Only ever follow an internal, single-segment-rooted path from ?next= —
 // never an absolute/protocol-relative URL, which would be an open redirect.
@@ -29,11 +30,16 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function goToNext(role: Parameters<typeof homePathForRole>[0]) {
+    const next = safeNextPath(searchParams.get("next"));
+    router.push(next ?? homePathForRole(role));
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,8 +47,20 @@ function LoginForm() {
     setIsSubmitting(true);
     try {
       const loggedInUser = await login(email, password);
-      const next = safeNextPath(searchParams.get("next"));
-      router.push(next ?? homePathForRole(loggedInUser.role));
+      goToNext(loggedInUser.role);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleGoogleCredential(idToken: string) {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const loggedInUser = await loginWithGoogle(idToken);
+      goToNext(loggedInUser.role);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
     } finally {
@@ -89,6 +107,10 @@ function LoginForm() {
               Log In
             </FormButton>
           </form>
+
+          <div className="mt-6">
+            <GoogleSignInButton onCredential={handleGoogleCredential} disabled={isSubmitting} />
+          </div>
         </Card>
 
         <p className="mt-6 text-center text-sm text-ink/70">

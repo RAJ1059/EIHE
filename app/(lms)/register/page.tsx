@@ -9,10 +9,11 @@ import { ApiError } from "@/lib/api/client";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { Input, Label, FieldError } from "@/components/lms/ui/Input";
 import { Card } from "@/components/lms/ui/Card";
+import { GoogleSignInButton } from "@/components/lms/ui/GoogleSignInButton";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,6 +26,19 @@ export default function RegisterPage() {
     setIsSubmitting(true);
     try {
       const registeredUser = await register(name, email, password);
+      router.push(homePathForRole(registeredUser.role));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleGoogleCredential(idToken: string) {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const registeredUser = await loginWithGoogle(idToken);
       router.push(homePathForRole(registeredUser.role));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
@@ -86,6 +100,10 @@ export default function RegisterPage() {
               Create Account
             </FormButton>
           </form>
+
+          <div className="mt-6">
+            <GoogleSignInButton onCredential={handleGoogleCredential} disabled={isSubmitting} />
+          </div>
         </Card>
 
         <p className="mt-6 text-center text-sm text-ink/70">

@@ -1,10 +1,12 @@
 import {
   ConflictException,
   Injectable,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
+import { OAuth2Client } from "google-auth-library";
 import * as bcrypt from "bcrypt";
 import type { StringValue } from "ms";
 import { UsersService } from "../users/users.service";
@@ -29,11 +31,73 @@ export interface PublicUser {
 
 @Injectable()
 export class AuthService {
+  private googleClient: OAuth2Client | null = null;
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
+
+  private getGoogleClient(): { client: OAuth2Client; clientId: string } {
+    const clientId = this.configService.get<string>("GOOGLE_CLIENT_ID");
+    if (!clientId) {
+      throw new ServiceUnavailableException(
+        "Google sign-in is not configured yet. Add GOOGLE_CLIENT_ID to server/.env.",
+      );
+    }
+    if (!this.googleClient) {
+      this.googleClient = new OAuth2Client(clientId);
+    }
+    return { client: this.googleClient, clientId };
+  }
+
+  async loginWithGoogle(idToken: string): Promise<{ user: PublicUser; tokens: AuthTokens }> {
+    const { client, clientId } = this.getGoogleClient();
+
+    let payload: { sub: string; email?: string; email_verified?: boolean; name?: string };
+    try {
+      const ticket = await client.verifyIdToken({ idToken, audience: clientId });
+      const verified = ticket.getPayload();
+      if (!verified) throw new Error("Empty token payload");
+      payload = verified;
+    } catch {
+      throw new UnauthorizedException("Could not verify this Google sign-in. Please try again.");
+    }
+
+    if (!payload.email || !payload.email_verified) {
+      throw new UnauthorizedException("This Google account has no verified email.");
+    }
+
+    let user = await this.usersService.findByGoogleId(payload.sub);
+
+    if (!user) {
+      const existingByEmail = await this.usersService.findByEmail(payload.email);
+      if (existingByEmail) {
+        await this.usersService.linkGoogleId(existingByEmail._id, payload.sub);
+        user = existingByEmail;
+      } else {
+        user = await this.usersService.createFromGoogle({
+          name: payload.name ?? payload.email,
+          email: payload.email,
+          googleId: payload.sub,
+        });
+      }
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException("This account has been deactivated.");
+    }
+
+    const tokens = await this.issueTokens({
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      name: user.name,
+    });
+
+    return { user: this.toPublicUser(user), tokens };
+  }
 
   async register(dto: RegisterDto): Promise<{ user: PublicUser; tokens: AuthTokens }> {
     const existing = await this.usersService.findByEmail(dto.email);
@@ -63,6 +127,12 @@ export class AuthService {
     const user = await this.usersService.findByEmail(dto.email, true);
     if (!user || !user.isActive) {
       throw new UnauthorizedException("Invalid email or password.");
+    }
+
+    if (!user.passwordHash) {
+      throw new UnauthorizedException(
+        "This account signs in with Google. Use the Sign in with Google button instead.",
+      );
     }
 
     const passwordMatches = await bcrypt.compare(dto.password, user.passwordHash);

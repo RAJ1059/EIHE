@@ -32,6 +32,18 @@ export class UsersService {
     return this.userModel.create(params);
   }
 
+  findByGoogleId(googleId: string) {
+    return this.userModel.findOne({ googleId }).exec();
+  }
+
+  createFromGoogle(params: { name: string; email: string; googleId: string }) {
+    return this.userModel.create({ ...params, role: Role.STUDENT });
+  }
+
+  linkGoogleId(userId: string | Types.ObjectId, googleId: string) {
+    return this.userModel.updateOne({ _id: userId }, { $set: { googleId } }).exec();
+  }
+
   setHashedRefreshToken(userId: string | Types.ObjectId, hashedRefreshToken: string | null) {
     return this.userModel
       .updateOne({ _id: userId }, { $set: { hashedRefreshToken } })
