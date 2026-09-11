@@ -6,11 +6,16 @@ export function QuizResult({
   canRetake,
   onRetake,
   retaking,
+  onContinue,
+  continueLabel = "Continue →",
 }: {
   result: LmsQuizSubmitResult;
   canRetake: boolean;
   onRetake: () => void;
   retaking: boolean;
+  /** Present only when the attempt passed and there's somewhere to go next. */
+  onContinue?: () => void;
+  continueLabel?: string;
 }) {
   if (!result.showResults) {
     return (
@@ -44,6 +49,11 @@ export function QuizResult({
         <p className="mt-3 text-xs text-red-600">Time expired before this was submitted.</p>
       )}
 
+      {result.passed && onContinue && (
+        <div className="mt-6">
+          <FormButton onClick={onContinue}>{continueLabel}</FormButton>
+        </div>
+      )}
       {!result.passed && canRetake && (
         <div className="mt-6">
           <FormButton onClick={onRetake} loading={retaking}>

@@ -97,12 +97,21 @@ export class LessonsService {
   async getAccessReason(
     userId: string | null,
     lesson: LessonDocument,
-  ): Promise<"ok" | "not_enrolled" | "previous_required"> {
+  ): Promise<"ok" | "not_enrolled" | "previous_required" | "quiz_required"> {
     if (lesson.allowFreePreview) return "ok";
     if (!userId) return "not_enrolled";
 
     const enrolled = await this.enrollmentsService.isEnrolled(userId, lesson.course.toString());
     if (!enrolled) return "not_enrolled";
+
+    // Chapter gate: the first lesson of a module is locked until every quiz
+    // belonging to the *previous* module has been passed — independent of
+    // requirePreviousLesson, which only governs lesson-to-lesson sequencing
+    // within a chapter. A module with no quiz gates nothing extra here.
+    if (lesson.order === 0) {
+      const blockedByQuiz = await this.isBlockedByPreviousModuleQuiz(userId, lesson);
+      if (blockedByQuiz) return "quiz_required";
+    }
 
     if (!lesson.requirePreviousLesson) return "ok";
 
@@ -119,11 +128,49 @@ export class LessonsService {
     return (await this.getAccessReason(userId, lesson)) === "ok";
   }
 
-  private lockedException(reason: "not_enrolled" | "previous_required"): ForbiddenException {
+  private async isBlockedByPreviousModuleQuiz(
+    userId: string,
+    lesson: LessonDocument,
+  ): Promise<boolean> {
+    const currentModule = await this.moduleModel.findById(lesson.module).exec();
+    if (!currentModule) return false;
+
+    const previousModule = await this.moduleModel
+      .findOne({ course: lesson.course, order: { $lt: currentModule.order } })
+      .sort({ order: -1 })
+      .exec();
+    if (!previousModule) return false;
+
+    const requiredQuizzes = await this.quizModel
+      .find({ module: previousModule._id })
+      .select("_id")
+      .exec();
+    if (requiredQuizzes.length === 0) return false;
+
+    const passedQuizIds = await this.quizAttemptModel.distinct("quiz", {
+      user: userId,
+      quiz: { $in: requiredQuizzes.map((q) => q._id) },
+      status: QuizAttemptStatus.SUBMITTED,
+      passed: true,
+    });
+    const passedIdSet = new Set(passedQuizIds.map((id) => id.toString()));
+
+    return !requiredQuizzes.every((q) => passedIdSet.has(q._id.toString()));
+  }
+
+  private lockedException(
+    reason: "not_enrolled" | "previous_required" | "quiz_required",
+  ): ForbiddenException {
     if (reason === "not_enrolled") {
       return new ForbiddenException({
         message: "Purchase this course to access the learning content.",
         error: "LESSON_LOCKED_NOT_ENROLLED",
+      });
+    }
+    if (reason === "quiz_required") {
+      return new ForbiddenException({
+        message: "Pass the previous chapter's quiz to unlock this lesson.",
+        error: "LESSON_LOCKED_QUIZ_REQUIRED",
       });
     }
     return new ForbiddenException({

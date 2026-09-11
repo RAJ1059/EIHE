@@ -11,6 +11,7 @@ import { YouTubePlayer } from "@/components/lms/course/YouTubePlayer";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { CurriculumSidebar } from "@/components/lms/course/CurriculumSidebar";
 import { RichTextContent } from "@/components/lms/ui/RichTextContent";
+import { findNextAfterLesson, type NextStep } from "@/lib/lms/curriculumNav";
 
 export default function LessonPlayerPage() {
   const params = useParams<{ slug: string; lessonId: string }>();
@@ -22,6 +23,7 @@ export default function LessonPlayerPage() {
   const [error, setError] = useState<string | null>(null);
   const [needsPurchase, setNeedsPurchase] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [nextStep, setNextStep] = useState<NextStep | null>(null);
 
   const loadCurriculum = useCallback(() => {
     if (!accessToken) return;
@@ -42,6 +44,7 @@ export default function LessonPlayerPage() {
         setLesson(data);
         setError(null);
         setNeedsPurchase(false);
+        setNextStep(null);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -56,17 +59,21 @@ export default function LessonPlayerPage() {
   }, [accessToken, params.lessonId]);
 
   async function handleComplete() {
-    if (!accessToken) return;
+    if (!accessToken || !curriculum) return;
     setCompleting(true);
     try {
       await completeLesson(accessToken, params.lessonId);
       loadCurriculum();
 
-      const allLessons = (curriculum?.modules ?? []).flatMap((m) => m.lessons);
-      const index = allLessons.findIndex((l) => l._id === params.lessonId);
-      const next = allLessons[index + 1];
-      if (next) {
-        router.push(`/student/courses/${params.slug}/lesson/${next._id}`);
+      const next = findNextAfterLesson(curriculum, params.lessonId);
+      if (next.type === "lesson") {
+        // Still inside the same chapter — keep the existing flow of moving
+        // straight on to the next lesson.
+        router.push(`/student/courses/${params.slug}/lesson/${next.lessonId}`);
+      } else {
+        // End of the chapter (or the whole course) — show what's next
+        // instead of silently redirecting into a quiz.
+        setNextStep(next);
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not mark this lesson complete.");
@@ -74,6 +81,19 @@ export default function LessonPlayerPage() {
       setCompleting(false);
     }
   }
+
+  // Only relevant for the LESSON_LOCKED_QUIZ_REQUIRED edge case (direct URL
+  // entry, stale bookmark) — the sidebar already hides this link normally
+  // since the lesson shows locked there too.
+  const blockingQuiz = curriculum
+    ? (() => {
+        const moduleIndex = curriculum.modules.findIndex((m) =>
+          m.lessons.some((l) => l._id === params.lessonId),
+        );
+        if (moduleIndex <= 0) return null;
+        return curriculum.modules[moduleIndex - 1].quizzes.find((q) => !q.passed) ?? null;
+      })()
+    : null;
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
@@ -89,6 +109,14 @@ export default function LessonPlayerPage() {
                 className="mt-3 inline-block font-semibold underline hover:no-underline"
               >
                 View course →
+              </Link>
+            )}
+            {!needsPurchase && blockingQuiz && (
+              <Link
+                href={`/student/courses/${params.slug}/quiz/${blockingQuiz._id}`}
+                className="mt-3 inline-block font-semibold underline hover:no-underline"
+              >
+                Take that chapter&rsquo;s quiz →
               </Link>
             )}
           </div>
@@ -129,9 +157,40 @@ export default function LessonPlayerPage() {
               </div>
             )}
 
-            <FormButton className="mt-6" onClick={handleComplete} loading={completing}>
-              Mark Lesson Complete
-            </FormButton>
+            {nextStep === null && (
+              <FormButton className="mt-6" onClick={handleComplete} loading={completing}>
+                Mark Lesson Complete
+              </FormButton>
+            )}
+
+            {nextStep?.type === "quiz" && (
+              <div className="mt-6 rounded-2xl border border-teal/20 bg-teal/5 p-6 text-center">
+                <p className="font-semibold text-ink">🎉 Chapter complete!</p>
+                <p className="mt-1 text-sm text-ink/60">
+                  Take the quiz for this chapter to unlock the next one.
+                </p>
+                <FormButton
+                  className="mt-4"
+                  onClick={() =>
+                    router.push(`/student/courses/${params.slug}/quiz/${nextStep.quizId}`)
+                  }
+                >
+                  Take Chapter Quiz →
+                </FormButton>
+              </div>
+            )}
+
+            {nextStep?.type === "done" && (
+              <div className="mt-6 rounded-2xl border border-teal/20 bg-teal/5 p-6 text-center">
+                <p className="font-semibold text-ink">🎉 You&rsquo;ve finished this course!</p>
+                <FormButton
+                  className="mt-4"
+                  onClick={() => router.push("/student/courses")}
+                >
+                  Back to My Courses
+                </FormButton>
+              </div>
+            )}
           </div>
         )}
       </div>

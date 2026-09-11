@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getCurriculum } from "@/lib/api/lessons";
 import { getQuiz, startQuiz, submitQuiz } from "@/lib/api/quizzes";
@@ -17,11 +17,13 @@ import { QuizTimer } from "@/components/lms/course/QuizTimer";
 import { QuizQuestion, type QuestionAnswerValue } from "@/components/lms/course/QuizQuestion";
 import { QuizResult } from "@/components/lms/course/QuizResult";
 import { FormButton } from "@/components/lms/ui/FormButton";
+import { findNextAfterQuiz, type NextStep } from "@/lib/lms/curriculumNav";
 
 type Stage = "intro" | "taking" | "result";
 
 export default function QuizPlayerPage() {
   const params = useParams<{ slug: string; quizId: string }>();
+  const router = useRouter();
   const { accessToken } = useAuth();
 
   const [curriculum, setCurriculum] = useState<LmsCurriculum | null>(null);
@@ -32,6 +34,7 @@ export default function QuizPlayerPage() {
   const [stage, setStage] = useState<Stage>("intro");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [nextStep, setNextStep] = useState<NextStep | null>(null);
 
   const loadCurriculum = useCallback(() => {
     if (!accessToken) return;
@@ -65,6 +68,7 @@ export default function QuizPlayerPage() {
         ),
       );
       setResult(null);
+      setNextStep(null);
       setStage("taking");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not start this quiz.");
@@ -89,6 +93,9 @@ export default function QuizPlayerPage() {
       );
       setResult(submitted);
       setStage("result");
+      setNextStep(
+        submitted.passed && curriculum ? findNextAfterQuiz(curriculum, params.quizId) : null,
+      );
       loadQuiz();
       loadCurriculum();
     } catch (err) {
@@ -96,7 +103,7 @@ export default function QuizPlayerPage() {
     } finally {
       setBusy(false);
     }
-  }, [accessToken, session, params.quizId, answers, loadQuiz, loadCurriculum]);
+  }, [accessToken, session, params.quizId, answers, curriculum, loadQuiz, loadCurriculum]);
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
@@ -209,6 +216,16 @@ export default function QuizPlayerPage() {
             canRetake={quiz ? quiz.attemptsRemaining !== 0 && !quiz.locked : false}
             retaking={busy}
             onRetake={handleStart}
+            onContinue={
+              nextStep?.type === "lesson"
+                ? () => router.push(`/student/courses/${params.slug}/lesson/${nextStep.lessonId}`)
+                : nextStep?.type === "quiz"
+                  ? () => router.push(`/student/courses/${params.slug}/quiz/${nextStep.quizId}`)
+                  : nextStep?.type === "done"
+                    ? () => router.push("/student/courses")
+                    : undefined
+            }
+            continueLabel={nextStep?.type === "done" ? "Back to My Courses" : "Continue →"}
           />
         )}
       </div>
