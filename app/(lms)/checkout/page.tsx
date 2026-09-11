@@ -1,28 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useCart, type CartItem } from "@/lib/cart/CartContext";
 import { createOrder, verifyPayment } from "@/lib/api/orders";
+import { registerRequest } from "@/lib/api/auth";
 import { openRazorpayCheckout } from "@/lib/payments/razorpay";
 import { ApiError } from "@/lib/api/client";
 import { Card } from "@/components/lms/ui/Card";
 import { FormButton } from "@/components/lms/ui/FormButton";
-import { Input, Label } from "@/components/lms/ui/Input";
+import { Input, Label, FieldError } from "@/components/lms/ui/Input";
 import type { LmsUser } from "@/types/lms";
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const { user, accessToken, isLoading } = useAuth();
   const { items } = useCart();
 
-  useEffect(() => {
-    if (!isLoading && !user) router.replace("/login?next=/checkout");
-  }, [isLoading, user, router]);
-
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center bg-cream">
         <p className="text-sm text-ink/60">Loading…</p>
@@ -44,7 +40,11 @@ export default function CheckoutPage() {
     );
   }
 
-  return <CheckoutForm key={user.id} user={user} accessToken={accessToken as string} items={items} />;
+  // No `key` here: a guest's inline registration flips `user` from null to
+  // a real object mid-checkout (see handlePlaceOrder), and remounting at
+  // that exact moment would wipe the just-typed billing fields and any
+  // in-flight payment error right as they need to be shown.
+  return <CheckoutForm user={user} accessToken={accessToken} items={items} />;
 }
 
 function CheckoutForm({
@@ -52,33 +52,61 @@ function CheckoutForm({
   accessToken,
   items,
 }: {
-  user: LmsUser;
-  accessToken: string;
+  user: LmsUser | null;
+  accessToken: string | null;
   items: CartItem[];
 }) {
   const router = useRouter();
+  const { setSession } = useAuth();
   const { subtotal, clear } = useCart();
 
-  const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
+  const [name, setName] = useState(user?.name ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [zip, setZip] = useState("");
 
+  // Guests create their account inline instead of being sent to a separate
+  // login page — checked by default since an account is how they'll get
+  // back into the course after paying.
+  const [wantsAccount, setWantsAccount] = useState(true);
+  const [password, setPassword] = useState("");
+
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cancelled, setCancelled] = useState(false);
 
   const currency = items[0]?.currency ?? "INR";
+  const needsAccount = !user;
 
   async function handlePlaceOrder() {
     setError(null);
     setCancelled(false);
+
+    if (needsAccount && !wantsAccount) {
+      setError("Check the box to create your account, or log in to an existing one, to continue.");
+      return;
+    }
+
     setPaying(true);
     try {
-      const order = await createOrder(accessToken, {
+      let token = accessToken;
+
+      if (needsAccount) {
+        try {
+          const result = await registerRequest({ name, email, password });
+          setSession(result.user, result.accessToken);
+          token = result.accessToken;
+        } catch (err) {
+          setError(err instanceof ApiError ? err.message : "Could not create your account.");
+          setPaying(false);
+          return;
+        }
+      }
+
+      const order = await createOrder(token as string, {
         courseIds: items.map((i) => i.courseId),
         billingInfo: { name, email, phone, country, address, city, zip },
       });
@@ -94,14 +122,18 @@ function CheckoutForm({
         theme: { color: "#2f6f5e" },
         handler: async (response) => {
           try {
-            await verifyPayment(accessToken, {
+            await verifyPayment(token as string, {
               orderId: order.orderId,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
             clear();
-            router.push(`/checkout/success/${order.orderId}`);
+            // Straight into the course, not a receipt page — that's what
+            // someone who just paid to start learning actually wants.
+            router.push(
+              items.length === 1 ? `/student/courses/${items[0].slug}` : "/student/courses",
+            );
           } catch (err) {
             setError(
               err instanceof ApiError
@@ -127,6 +159,10 @@ function CheckoutForm({
       setPaying(false);
     }
   }
+
+  const missingContactOrBilling =
+    !name || !email || !phone || !country || !address || !city || !zip;
+  const accountBlocked = needsAccount && (!wantsAccount || password.length < 8);
 
   return (
     <section className="bg-cream">
@@ -168,6 +204,53 @@ function CheckoutForm({
                 </div>
               </div>
             </Card>
+
+            {needsAccount && (
+              <Card>
+                <h2 className="font-bold text-ink">Account</h2>
+                <label className="mt-3 flex items-start gap-2 text-sm text-ink/80">
+                  <input
+                    type="checkbox"
+                    checked={wantsAccount}
+                    onChange={(e) => setWantsAccount(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-ink/20 text-teal focus:ring-teal"
+                  />
+                  Create an account with this email so I can access my course right after paying
+                </label>
+
+                {wantsAccount ? (
+                  <div className="mt-3">
+                    <Label htmlFor="co-password">Password</Label>
+                    <Input
+                      id="co-password"
+                      type="password"
+                      minLength={8}
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <FieldError
+                      message={
+                        password.length > 0 && password.length < 8
+                          ? "Password must be at least 8 characters."
+                          : null
+                      }
+                    />
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-ink/60">
+                    Already have an account?{" "}
+                    <Link
+                      href="/login?next=/checkout"
+                      className="font-semibold text-teal hover:underline"
+                    >
+                      Log in
+                    </Link>{" "}
+                    to continue instead.
+                  </p>
+                )}
+              </Card>
+            )}
 
             <Card>
               <h2 className="font-bold text-ink">Billing Information</h2>
@@ -227,7 +310,7 @@ function CheckoutForm({
                 className="mt-6 w-full"
                 onClick={handlePlaceOrder}
                 loading={paying}
-                disabled={!name || !email || !phone || !country || !address || !city || !zip}
+                disabled={missingContactOrBilling || accountBlocked}
               >
                 Place Order
               </FormButton>

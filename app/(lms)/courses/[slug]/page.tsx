@@ -154,6 +154,22 @@ export default function CourseDetailPage() {
     router.push("/cart");
   }
 
+  // Guests skip the login gate entirely: the course goes straight into the
+  // cart and they land on checkout, where they can pay and create their
+  // account in one step instead of being bounced to a separate login page.
+  function handleGuestCheckout() {
+    addItem({
+      courseId: course!._id,
+      title: course!.title,
+      slug: course!.slug,
+      price: course!.price,
+      salePrice: course!.salePrice,
+      currency: course!.currency,
+      featuredImage: course!.featuredImage,
+    });
+    router.push("/checkout");
+  }
+
   function toggleModule(id: string) {
     setExpandedModuleId((current) => (current === id ? null : id));
   }
@@ -354,12 +370,18 @@ export default function CourseDetailPage() {
                   Continue Learning →
                 </FormButton>
               ) : !user ? (
-                <FormButton
-                  className="w-full"
-                  onClick={() => router.push(`/login?next=/courses/${course.slug}`)}
-                >
-                  Enroll in this course
-                </FormButton>
+                isFree ? (
+                  <FormButton
+                    className="w-full"
+                    onClick={() => router.push(`/register?next=/courses/${course.slug}`)}
+                  >
+                    Create Account to Enroll
+                  </FormButton>
+                ) : (
+                  <FormButton className="w-full" onClick={handleGuestCheckout}>
+                    Enroll in this course
+                  </FormButton>
+                )
               ) : isFree ? (
                 <FormButton className="w-full" onClick={handleEnrollFree} loading={isEnrolling}>
                   Enroll for Free

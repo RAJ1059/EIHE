@@ -28,6 +28,8 @@ type AuthState = {
   login: (email: string, password: string) => Promise<LmsUser>;
   register: (name: string, email: string, password: string) => Promise<LmsUser>;
   loginWithGoogle: (idToken: string) => Promise<LmsUser>;
+  /** Hydrates context state from tokens already obtained elsewhere (e.g. guest checkout's inline signup) without making a network call. */
+  setSession: (user: LmsUser, accessToken: string) => void;
   logout: () => Promise<void>;
 };
 
@@ -86,6 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result.user;
   }, []);
 
+  const setSession = useCallback((sessionUser: LmsUser, token: string) => {
+    setAccessToken(token);
+    setUser(sessionUser);
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       if (accessToken) await logoutRequest(accessToken);
@@ -99,8 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [accessToken]);
 
   const value = useMemo(
-    () => ({ user, accessToken, isLoading, login, register, loginWithGoogle, logout }),
-    [user, accessToken, isLoading, login, register, loginWithGoogle, logout],
+    () => ({ user, accessToken, isLoading, login, register, loginWithGoogle, setSession, logout }),
+    [user, accessToken, isLoading, login, register, loginWithGoogle, setSession, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

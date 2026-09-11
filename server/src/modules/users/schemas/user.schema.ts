@@ -18,9 +18,13 @@ export class User {
   @Prop({ type: String, default: null, select: false })
   passwordHash!: string | null;
 
-  // Set only for accounts created or linked via Google Sign-In.
-  @Prop({ type: String, default: null, index: { unique: true, sparse: true } })
-  googleId!: string | null;
+  // Set only for accounts created or linked via Google Sign-In. No default —
+  // a sparse unique index only excludes documents where the field is
+  // entirely absent, so writing an explicit `null` on every other account
+  // would collide with the second such account (see the incident this
+  // comment is here to prevent a repeat of).
+  @Prop({ type: String, index: { unique: true, sparse: true } })
+  googleId?: string | null;
 
   @Prop({ type: String, enum: Role, default: Role.STUDENT })
   role!: Role;

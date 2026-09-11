@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { homePathForRole } from "@/lib/auth/roles";
@@ -11,8 +11,25 @@ import { Input, Label, FieldError } from "@/components/lms/ui/Input";
 import { Card } from "@/components/lms/ui/Card";
 import { GoogleSignInButton } from "@/components/lms/ui/GoogleSignInButton";
 
+// Only ever follow an internal, single-segment-rooted path from ?next= —
+// never an absolute/protocol-relative URL, which would be an open redirect.
+function safeNextPath(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+}
+
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { register, loginWithGoogle } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -20,13 +37,18 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  function goToNext(role: Parameters<typeof homePathForRole>[0]) {
+    const next = safeNextPath(searchParams.get("next"));
+    router.push(next ?? homePathForRole(role));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setIsSubmitting(true);
     try {
       const registeredUser = await register(name, email, password);
-      router.push(homePathForRole(registeredUser.role));
+      goToNext(registeredUser.role);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
     } finally {
@@ -39,7 +61,7 @@ export default function RegisterPage() {
     setIsSubmitting(true);
     try {
       const registeredUser = await loginWithGoogle(idToken);
-      router.push(homePathForRole(registeredUser.role));
+      goToNext(registeredUser.role);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
     } finally {
