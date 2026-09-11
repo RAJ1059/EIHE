@@ -80,9 +80,9 @@ export default function CourseContentPage() {
     };
   }, [accessToken, params.id, refresh]);
 
-  async function handleAddModule(title: string) {
+  async function handleAddModule(title: string, image: string) {
     if (!accessToken) return;
-    await createModule(accessToken, params.id, { title });
+    await createModule(accessToken, params.id, { title, image: image || undefined });
     await refresh();
   }
 
@@ -100,6 +100,12 @@ export default function CourseContentPage() {
   async function handleRenameModule(moduleId: string, title: string) {
     if (!accessToken) return;
     await updateModule(accessToken, moduleId, { title });
+    await refresh();
+  }
+
+  async function handleUpdateModuleImage(moduleId: string, image: string) {
+    if (!accessToken) return;
+    await updateModule(accessToken, moduleId, { image });
     await refresh();
   }
 
@@ -186,6 +192,7 @@ export default function CourseContentPage() {
               isLast={index === modules.length - 1}
               onMove={(direction) => handleMoveModule(module._id, direction)}
               onRename={(title) => handleRenameModule(module._id, title)}
+              onUpdateImage={(image) => handleUpdateModuleImage(module._id, image)}
               onDelete={() => handleDeleteModule(module._id)}
               onAddLesson={(input) => handleAddLesson(module._id, input)}
               onUpdateLesson={handleUpdateLesson}
@@ -231,27 +238,36 @@ export default function CourseContentPage() {
   );
 }
 
-function AddModuleForm({ onAdd }: { onAdd: (title: string) => Promise<void> }) {
+function AddModuleForm({ onAdd }: { onAdd: (title: string, image: string) => Promise<void> }) {
   const [title, setTitle] = useState("");
+  const [image, setImage] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function submit() {
     if (!title.trim()) return;
     setSaving(true);
     try {
-      await onAdd(title.trim());
+      await onAdd(title.trim(), image.trim());
       setTitle("");
+      setImage("");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Card className="flex items-center gap-3">
+    <Card className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <Input
         placeholder="New module title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
+        className="sm:flex-1"
+      />
+      <Input
+        placeholder="Module image URL (optional)"
+        value={image}
+        onChange={(e) => setImage(e.target.value)}
+        className="sm:flex-1"
       />
       <FormButton onClick={submit} loading={saving} disabled={!title.trim()}>
         + Add Module
@@ -266,6 +282,7 @@ function ModuleCard({
   isLast,
   onMove,
   onRename,
+  onUpdateImage,
   onDelete,
   onAddLesson,
   onUpdateLesson,
@@ -279,6 +296,7 @@ function ModuleCard({
   isLast: boolean;
   onMove: (direction: -1 | 1) => void;
   onRename: (title: string) => void;
+  onUpdateImage: (image: string) => void;
   onDelete: () => void;
   onAddLesson: (input: LessonInput) => Promise<void>;
   onUpdateLesson: (lessonId: string, input: Partial<LessonInput>) => Promise<void>;
@@ -289,6 +307,8 @@ function ModuleCard({
 }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [title, setTitle] = useState(module.title);
+  const [editingImage, setEditingImage] = useState(false);
+  const [image, setImage] = useState(module.image ?? "");
   const [showAddLesson, setShowAddLesson] = useState(false);
 
   return (
@@ -315,6 +335,22 @@ function ModuleCard({
               ▼
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setEditingImage((v) => !v)}
+            title="Click to set the module image"
+            className="shrink-0 overflow-hidden rounded-lg border border-ink/10"
+          >
+            {module.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={module.image} alt="" className="h-10 w-10 object-cover" />
+            ) : (
+              <span className="flex h-10 w-10 items-center justify-center bg-ink/5 text-[10px] font-semibold text-ink/40">
+                IMG
+              </span>
+            )}
+          </button>
 
           {editingTitle ? (
             <div className="flex flex-1 items-center gap-2">
@@ -364,6 +400,26 @@ function ModuleCard({
           </button>
         </div>
       </div>
+
+      {editingImage && (
+        <div className="mt-3 flex items-center gap-2 border-t border-ink/10 pt-3">
+          <Input
+            placeholder="Module image URL"
+            value={image}
+            onChange={(e) => setImage(e.target.value)}
+            className="flex-1"
+          />
+          <FormButton
+            variant="secondary"
+            onClick={() => {
+              onUpdateImage(image.trim());
+              setEditingImage(false);
+            }}
+          >
+            Save
+          </FormButton>
+        </div>
+      )}
 
       <ul className="mt-4 divide-y divide-ink/5">
         {module.lessons.map((lesson, index) => (

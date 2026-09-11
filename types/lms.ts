@@ -65,6 +65,7 @@ export type LmsModule = {
   _id: string;
   title: string;
   description: string;
+  image: string | null;
   course: string;
   order: number;
   status: LmsModuleStatus;
@@ -118,6 +119,7 @@ export type LmsCurriculumModule = {
   _id: string;
   title: string;
   description: string;
+  image: string | null;
   order: number;
   lessons: LmsCurriculumLesson[];
   quizzes: LmsCurriculumQuiz[];

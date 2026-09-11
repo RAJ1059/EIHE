@@ -18,6 +18,9 @@ export class Module {
   @Prop({ trim: true, default: "" })
   description!: string;
 
+  @Prop({ type: String, default: null })
+  image!: string | null;
+
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Course", required: true, index: true })
   course!: Types.ObjectId;
 

@@ -248,10 +248,10 @@ export function CourseDetailContent({
                     onClick={() => setExpandedModuleId(module._id)}
                     className="group relative block aspect-[4/3] overflow-hidden rounded-xl"
                   >
-                    {course.featuredImage && (
+                    {(module.image || course.featuredImage) && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={course.featuredImage}
+                        src={module.image || course.featuredImage || ""}
                         alt=""
                         className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />

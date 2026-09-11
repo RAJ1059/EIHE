@@ -298,6 +298,7 @@ export class LessonsService {
         _id: module._id,
         title: module.title,
         description: module.description,
+        image: module.image,
         order: module.order,
         lessons: lessonSummaries,
         quizzes: moduleQuizzes,

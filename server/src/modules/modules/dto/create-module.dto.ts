@@ -13,6 +13,11 @@ export class CreateModuleDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  image?: string;
+
+  @IsOptional()
   @IsEnum(ModuleStatus)
   status?: ModuleStatus;
 }

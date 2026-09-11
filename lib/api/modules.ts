@@ -4,6 +4,7 @@ import type { LmsModule } from "@/types/lms";
 export type ModuleInput = {
   title: string;
   description?: string;
+  image?: string;
   status?: LmsModule["status"];
 };
 
