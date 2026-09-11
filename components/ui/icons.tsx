@@ -79,6 +79,60 @@ export function LockIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function UnlockIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 7.4-2" />
+    </svg>
+  );
+}
+
+export function KeyIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <circle cx="8" cy="15" r="3.5" />
+      <path d="M10.5 12.5 18 5M16 7l2 2M18.5 4.5l2 2" />
+    </svg>
+  );
+}
+
+export function PencilIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M4 20l.9-4 10-10 3.1 3.1-10 10L4 20Z" />
+      <path d="M13.5 6.5 17 10" />
+    </svg>
+  );
+}
+
 export function PeopleIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg

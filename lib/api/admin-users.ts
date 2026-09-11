@@ -54,3 +54,25 @@ export function removeUserEnrollment(accessToken: string, id: string, courseId: 
     accessToken,
   });
 }
+
+export function setUserActive(accessToken: string, id: string, isActive: boolean) {
+  return apiFetch<LmsAdminUser>(`/admin/users/${id}/status`, {
+    method: "PUT",
+    accessToken,
+    body: { isActive },
+  });
+}
+
+export function triggerUserPasswordReset(accessToken: string, id: string) {
+  return apiFetch<{ sent: true }>(`/admin/users/${id}/reset-password`, {
+    method: "POST",
+    accessToken,
+  });
+}
+
+export function deleteUser(accessToken: string, id: string) {
+  return apiFetch<{ deleted: true }>(`/admin/users/${id}`, {
+    method: "DELETE",
+    accessToken,
+  });
+}

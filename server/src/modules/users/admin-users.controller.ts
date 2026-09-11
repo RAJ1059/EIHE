@@ -1,13 +1,28 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { QueryUsersDto } from "./dto/query-users.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
+import { SetUserActiveDto } from "./dto/set-user-active.dto";
 import { ManualEnrollDto } from "./dto/manual-enroll.dto";
 import { EnrollmentsService } from "../enrollments/enrollments.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { Role } from "../../common/enums/role.enum";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import type { AuthenticatedUser } from "../auth/strategies/jwt.strategy";
 
 @Controller("admin/users")
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -37,6 +52,34 @@ export class AdminUsersController {
   @Roles(Role.SUPER_ADMIN)
   updateRole(@Param("id") id: string, @Body() dto: UpdateRoleDto) {
     return this.usersService.updateRole(id, dto.role);
+  }
+
+  @Put(":id/status")
+  setActive(
+    @Param("id") id: string,
+    @Body() dto: SetUserActiveDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    if (id === currentUser.userId) {
+      throw new BadRequestException("You can't suspend your own account.");
+    }
+    return this.usersService.setActive(id, dto.isActive);
+  }
+
+  @Post(":id/reset-password")
+  async triggerPasswordReset(@Param("id") id: string) {
+    await this.usersService.triggerPasswordReset(id);
+    return { sent: true };
+  }
+
+  @Delete(":id")
+  @Roles(Role.SUPER_ADMIN)
+  async remove(@Param("id") id: string, @CurrentUser() currentUser: AuthenticatedUser) {
+    if (id === currentUser.userId) {
+      throw new ForbiddenException("You can't delete your own account.");
+    }
+    await this.usersService.remove(id);
+    return { deleted: true };
   }
 
   @Post(":id/enrollments")

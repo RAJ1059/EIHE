@@ -241,6 +241,7 @@ export type LmsAdminUser = {
   email: string;
   role: LmsRole;
   isActive: boolean;
+  emailVerified: boolean;
   createdAt: string;
   updatedAt: string;
 };

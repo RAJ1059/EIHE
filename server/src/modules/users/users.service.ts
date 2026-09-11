@@ -1,9 +1,20 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
+import { ConfigService } from "@nestjs/config";
 import { FilterQuery, Model, Types } from "mongoose";
 import { User, type UserDocument } from "./schemas/user.schema";
+import { Enrollment, type EnrollmentDocument } from "../enrollments/schemas/enrollment.schema";
+import {
+  LessonProgress,
+  type LessonProgressDocument,
+} from "../lesson-progress/schemas/lesson-progress.schema";
+import { QuizAttempt, type QuizAttemptDocument } from "../quizzes/schemas/quiz-attempt.schema";
+import { EmailService } from "../email/email.service";
 import { Role } from "../../common/enums/role.enum";
+import { generateSecureToken, hashToken } from "../../common/utils/token";
 import type { UpdateProfileDto } from "./dto/update-profile.dto";
+
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 export type UserListQuery = {
   search?: string;
@@ -14,7 +25,15 @@ export type UserListQuery = {
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private readonly userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(Enrollment.name) private readonly enrollmentModel: Model<EnrollmentDocument>,
+    @InjectModel(LessonProgress.name)
+    private readonly lessonProgressModel: Model<LessonProgressDocument>,
+    @InjectModel(QuizAttempt.name) private readonly quizAttemptModel: Model<QuizAttemptDocument>,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
+  ) {}
 
   findByEmail(email: string, includeSecrets = false) {
     const query = this.userModel.findOne({ email: email.toLowerCase().trim() });
@@ -181,5 +200,49 @@ export class UsersService {
     user.role = role;
     await user.save();
     return user;
+  }
+
+  async setActive(id: string, isActive: boolean) {
+    const user = await this.findByIdOrThrow(id);
+    user.isActive = isActive;
+    // Suspending revokes any existing session immediately; reactivating
+    // doesn't need to touch it — they simply log in again normally.
+    if (!isActive) {
+      user.hashedRefreshToken = null;
+    }
+    await user.save();
+    return user;
+  }
+
+  /** Admin-triggered password reset — same mechanism as the self-service
+   * flow, minus the enumeration-safety wrapper (the caller is already a
+   * trusted, authenticated admin who knows this user exists). */
+  async triggerPasswordReset(id: string): Promise<void> {
+    const user = await this.findByIdOrThrow(id);
+
+    const rawToken = generateSecureToken();
+    const tokenHash = hashToken(rawToken);
+    const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+    await this.setPasswordResetToken(user._id, tokenHash, expiresAt);
+
+    const frontendUrl = this.configService.get<string>("FRONTEND_URL") ?? "http://localhost:3000";
+    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+    await this.emailService.sendPasswordResetEmail(user.email, resetUrl);
+  }
+
+  /** Deletes a user's account and their personal learning data
+   * (enrollments, lesson progress, quiz attempts). Orders are deliberately
+   * left alone — they're a price-snapshotted financial record and should
+   * outlive the account that placed them, same policy as course deletion. */
+  async remove(id: string): Promise<void> {
+    const user = await this.findByIdOrThrow(id);
+
+    await Promise.all([
+      this.enrollmentModel.deleteMany({ user: user._id }).exec(),
+      this.lessonProgressModel.deleteMany({ user: user._id }).exec(),
+      this.quizAttemptModel.deleteMany({ user: user._id }).exec(),
+    ]);
+
+    await user.deleteOne();
   }
 }

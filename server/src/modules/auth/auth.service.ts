@@ -9,12 +9,12 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { OAuth2Client } from "google-auth-library";
 import * as bcrypt from "bcrypt";
-import * as crypto from "crypto";
 import type { StringValue } from "ms";
 import { UsersService } from "../users/users.service";
 import { EmailService } from "../email/email.service";
 import { SettingsService } from "../settings/settings.service";
 import { Role } from "../../common/enums/role.enum";
+import { generateSecureToken, hashToken } from "../../common/utils/token";
 import type { RegisterDto } from "./dto/register.dto";
 import type { LoginDto } from "./dto/login.dto";
 import type { AuthenticatedUser } from "./strategies/jwt.strategy";
@@ -231,8 +231,8 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
     if (!user || !user.isActive) return;
 
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = this.hashToken(rawToken);
+    const rawToken = generateSecureToken();
+    const tokenHash = hashToken(rawToken);
     const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
     await this.usersService.setPasswordResetToken(user._id, tokenHash, expiresAt);
 
@@ -242,7 +242,7 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    const user = await this.usersService.findByValidResetTokenHash(this.hashToken(token));
+    const user = await this.usersService.findByValidResetTokenHash(hashToken(token));
     if (!user) {
       throw new BadRequestException("This reset link is invalid or has expired.");
     }
@@ -252,9 +252,7 @@ export class AuthService {
   }
 
   async verifyEmail(token: string): Promise<void> {
-    const user = await this.usersService.findByValidEmailVerificationTokenHash(
-      this.hashToken(token),
-    );
+    const user = await this.usersService.findByValidEmailVerificationTokenHash(hashToken(token));
     if (!user) {
       throw new BadRequestException("This verification link is invalid or has expired.");
     }
@@ -262,18 +260,14 @@ export class AuthService {
   }
 
   private async sendVerificationEmail(userId: string, email: string): Promise<void> {
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = this.hashToken(rawToken);
+    const rawToken = generateSecureToken();
+    const tokenHash = hashToken(rawToken);
     const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
     await this.usersService.setEmailVerificationToken(userId, tokenHash, expiresAt);
 
     const frontendUrl = this.configService.get<string>("FRONTEND_URL") ?? "http://localhost:3000";
     const verifyUrl = `${frontendUrl}/verify-email?token=${rawToken}`;
     await this.emailService.sendVerificationEmail(email, verifyUrl);
-  }
-
-  private hashToken(token: string): string {
-    return crypto.createHash("sha256").update(token).digest("hex");
   }
 
   verifyRefreshToken(token: string): { sub: string } {
