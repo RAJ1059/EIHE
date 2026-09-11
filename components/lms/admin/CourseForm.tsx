@@ -26,6 +26,7 @@ export function CourseForm({
     initialCourse?.shortDescription ?? "",
   );
   const [description, setDescription] = useState(initialCourse?.description ?? "");
+  const [featuredImage, setFeaturedImage] = useState(initialCourse?.featuredImage ?? "");
   const [category, setCategory] = useState(
     typeof initialCourse?.category === "object" ? initialCourse.category._id : "",
   );
@@ -59,6 +60,7 @@ export function CourseForm({
         title,
         shortDescription,
         description,
+        featuredImage: featuredImage.trim() || undefined,
         category,
         difficultyLevel,
         duration,
@@ -101,6 +103,30 @@ export function CourseForm({
           onChange={setDescription}
           placeholder="Describe what this course covers…"
         />
+      </div>
+
+      <div>
+        <Label htmlFor="featuredImage">Featured image URL</Label>
+        <div className="flex items-start gap-3">
+          <Input
+            id="featuredImage"
+            placeholder="https://example.com/course-cover.jpg"
+            value={featuredImage}
+            onChange={(e) => setFeaturedImage(e.target.value)}
+            className="flex-1"
+          />
+          <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-ink/10 bg-ink/5">
+            {featuredImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={featuredImage} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-[10px] font-semibold text-ink/40">IMG</span>
+            )}
+          </div>
+        </div>
+        <p className="mt-1.5 text-xs text-ink/50">
+          Shown on the course card, the course detail page, and as the fallback module image.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
