@@ -7,6 +7,7 @@ import {
   LessonProgressSchema,
 } from "../lesson-progress/schemas/lesson-progress.schema";
 import { QuizAttempt, QuizAttemptSchema } from "../quizzes/schemas/quiz-attempt.schema";
+import { Certificate, CertificateSchema } from "../certificates/schemas/certificate.schema";
 import { UsersService } from "./users.service";
 import { UsersController } from "./users.controller";
 import { AdminUsersController } from "./admin-users.controller";
@@ -24,6 +25,7 @@ import { EmailModule } from "../email/email.module";
       { name: Enrollment.name, schema: EnrollmentSchema },
       { name: LessonProgress.name, schema: LessonProgressSchema },
       { name: QuizAttempt.name, schema: QuizAttemptSchema },
+      { name: Certificate.name, schema: CertificateSchema },
     ]),
     EnrollmentsModule,
     EmailModule,

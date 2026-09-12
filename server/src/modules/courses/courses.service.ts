@@ -18,6 +18,7 @@ import {
   type LessonProgressDocument,
 } from "../lesson-progress/schemas/lesson-progress.schema";
 import { Enrollment, type EnrollmentDocument } from "../enrollments/schemas/enrollment.schema";
+import { Certificate, type CertificateDocument } from "../certificates/schemas/certificate.schema";
 import { slugify } from "../../common/utils/slugify";
 import { Role } from "../../common/enums/role.enum";
 import type { CreateCourseDto } from "./dto/create-course.dto";
@@ -42,6 +43,7 @@ export class CoursesService {
     @InjectModel(LessonProgress.name)
     private readonly lessonProgressModel: Model<LessonProgressDocument>,
     @InjectModel(Enrollment.name) private readonly enrollmentModel: Model<EnrollmentDocument>,
+    @InjectModel(Certificate.name) private readonly certificateModel: Model<CertificateDocument>,
   ) {}
 
   async create(dto: CreateCourseDto, requesterRole: Role) {
@@ -85,6 +87,7 @@ export class CoursesService {
       this.quizAttemptModel.deleteMany({ course: id }).exec(),
       this.lessonProgressModel.deleteMany({ course: id }).exec(),
       this.enrollmentModel.deleteMany({ course: id }).exec(),
+      this.certificateModel.deleteMany({ course: id }).exec(),
     ]);
 
     await course.deleteOne();

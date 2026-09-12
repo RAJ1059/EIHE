@@ -11,6 +11,7 @@ import {
   LessonProgressSchema,
 } from "../lesson-progress/schemas/lesson-progress.schema";
 import { Enrollment, EnrollmentSchema } from "../enrollments/schemas/enrollment.schema";
+import { Certificate, CertificateSchema } from "../certificates/schemas/certificate.schema";
 import { CoursesService } from "./courses.service";
 import { CoursesController, AdminCoursesController } from "./courses.controller";
 
@@ -28,6 +29,7 @@ import { CoursesController, AdminCoursesController } from "./courses.controller"
       { name: QuizAttempt.name, schema: QuizAttemptSchema },
       { name: LessonProgress.name, schema: LessonProgressSchema },
       { name: Enrollment.name, schema: EnrollmentSchema },
+      { name: Certificate.name, schema: CertificateSchema },
     ]),
   ],
   controllers: [CoursesController, AdminCoursesController],

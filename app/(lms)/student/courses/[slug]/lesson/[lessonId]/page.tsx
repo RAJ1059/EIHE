@@ -183,12 +183,17 @@ export default function LessonPlayerPage() {
             {nextStep?.type === "done" && (
               <div className="mt-6 rounded-2xl border border-teal/20 bg-teal/5 p-6 text-center">
                 <p className="font-semibold text-ink">🎉 You&rsquo;ve finished this course!</p>
-                <FormButton
-                  className="mt-4"
-                  onClick={() => router.push("/student/courses")}
-                >
-                  Back to My Courses
-                </FormButton>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                  <FormButton onClick={() => router.push("/student/certificates")}>
+                    View My Certificate
+                  </FormButton>
+                  <FormButton
+                    variant="secondary"
+                    onClick={() => router.push("/student/courses")}
+                  >
+                    Back to My Courses
+                  </FormButton>
+                </div>
               </div>
             )}
           </div>

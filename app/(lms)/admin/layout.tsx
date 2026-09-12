@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { href: "/admin/coupons", label: "Coupons", managementOnly: true },
   { href: "/admin/course-reports", label: "Course Reports", managementOnly: true },
   { href: "/admin/users", label: "Users", managementOnly: true },
+  { href: "/admin/certificates", label: "Certificates", managementOnly: true },
   { href: "/admin/settings", label: "Site Settings", managementOnly: true },
 ];
 

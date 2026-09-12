@@ -13,6 +13,7 @@ import { QuizzesService } from "./quizzes.service";
 import { QuizzesController } from "./quizzes.controller";
 import { AdminQuizzesController } from "./admin-quizzes.controller";
 import { EnrollmentsModule } from "../enrollments/enrollments.module";
+import { CourseCompletionModule } from "../course-completion/course-completion.module";
 
 @NestModule({
   imports: [
@@ -25,6 +26,7 @@ import { EnrollmentsModule } from "../enrollments/enrollments.module";
       { name: Module.name, schema: ModuleSchema },
     ]),
     EnrollmentsModule,
+    CourseCompletionModule,
   ],
   controllers: [QuizzesController, AdminQuizzesController],
   providers: [QuizzesService],

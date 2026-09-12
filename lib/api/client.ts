@@ -27,18 +27,22 @@ type ApiFetchOptions = Omit<RequestInit, "body"> & {
 
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
   const { body, accessToken, withCredentials, headers, ...rest } = options;
+  // A FormData body (file upload) must keep the browser's own
+  // multipart/form-data Content-Type (with its boundary) and must not be
+  // JSON-stringified — everything else keeps the existing JSON behavior.
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
 
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
       ...rest,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...headers,
       },
       credentials: withCredentials ? "include" : "same-origin",
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch (networkError) {
     // fetch() throws (not a rejected HTTP response) when the server is

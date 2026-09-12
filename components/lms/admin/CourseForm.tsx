@@ -7,6 +7,7 @@ import { ApiError } from "@/lib/api/client";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { Input, Label, Select, FieldError } from "@/components/lms/ui/Input";
 import { RichTextEditor } from "@/components/lms/ui/RichTextEditor";
+import { Switch } from "@/components/lms/ui/Switch";
 
 export function CourseForm({
   initialCourse,
@@ -36,6 +37,9 @@ export function CourseForm({
   const [duration, setDuration] = useState(initialCourse?.duration ?? "");
   const [price, setPrice] = useState(String(initialCourse?.price ?? 0));
   const [status, setStatus] = useState<LmsCourse["status"]>(initialCourse?.status ?? "DRAFT");
+  const [certificateEnabled, setCertificateEnabled] = useState(
+    initialCourse?.certificateEnabled ?? false,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -66,6 +70,7 @@ export function CourseForm({
         duration,
         price: Number(price),
         status,
+        certificateEnabled,
       });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not save this course.");
@@ -209,6 +214,19 @@ export function CourseForm({
             Review&rdquo; below.
           </p>
         )}
+      </div>
+
+      <div>
+        <Switch
+          checked={certificateEnabled}
+          onChange={setCertificateEnabled}
+          label="Award a certificate on completion"
+        />
+        <p className="mt-1.5 text-xs text-ink/50">
+          When enabled, a student who passes every final assessment (or, for
+          courses with none, finishes every lesson) automatically gets a
+          certificate using the template configured under Certificates.
+        </p>
       </div>
 
       <FieldError message={error} />

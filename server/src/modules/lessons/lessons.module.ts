@@ -9,6 +9,7 @@ import { LessonsService } from "./lessons.service";
 import { LessonsController, AdminLessonsController } from "./lessons.controller";
 import { EnrollmentsModule } from "../enrollments/enrollments.module";
 import { CoursesModule } from "../courses/courses.module";
+import { CourseCompletionModule } from "../course-completion/course-completion.module";
 
 @NestModule({
   imports: [
@@ -21,6 +22,7 @@ import { CoursesModule } from "../courses/courses.module";
     ]),
     EnrollmentsModule,
     CoursesModule,
+    CourseCompletionModule,
   ],
   controllers: [LessonsController, AdminLessonsController],
   providers: [LessonsService],

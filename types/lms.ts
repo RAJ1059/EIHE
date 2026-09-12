@@ -405,6 +405,38 @@ export type LmsPublicSettings = {
   taxPercent: number;
 };
 
+export type LmsCertificateTemplate = {
+  _id: string;
+  imageMimeType: string | null;
+  hasImage: boolean;
+  nameXPercent: number;
+  nameYPercent: number;
+  nameFontSize: number;
+  nameColor: string;
+  courseTitleXPercent: number;
+  courseTitleYPercent: number;
+  courseTitleFontSize: number;
+  courseTitleColor: string;
+  dateXPercent: number;
+  dateYPercent: number;
+  dateFontSize: number;
+  dateColor: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LmsCertificate = {
+  _id: string;
+  user: string;
+  course: { _id: string; title: string; slug: string } | string;
+  certificateNumber: string;
+  studentName: string;
+  courseTitle: string;
+  issuedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LmsPaginated<T> = {
   items: T[];
   pagination: {

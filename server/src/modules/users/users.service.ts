@@ -9,6 +9,7 @@ import {
   type LessonProgressDocument,
 } from "../lesson-progress/schemas/lesson-progress.schema";
 import { QuizAttempt, type QuizAttemptDocument } from "../quizzes/schemas/quiz-attempt.schema";
+import { Certificate, type CertificateDocument } from "../certificates/schemas/certificate.schema";
 import { EmailService } from "../email/email.service";
 import { Role } from "../../common/enums/role.enum";
 import { generateSecureToken, hashToken } from "../../common/utils/token";
@@ -31,6 +32,7 @@ export class UsersService {
     @InjectModel(LessonProgress.name)
     private readonly lessonProgressModel: Model<LessonProgressDocument>,
     @InjectModel(QuizAttempt.name) private readonly quizAttemptModel: Model<QuizAttemptDocument>,
+    @InjectModel(Certificate.name) private readonly certificateModel: Model<CertificateDocument>,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
   ) {}
@@ -241,6 +243,7 @@ export class UsersService {
       this.enrollmentModel.deleteMany({ user: user._id }).exec(),
       this.lessonProgressModel.deleteMany({ user: user._id }).exec(),
       this.quizAttemptModel.deleteMany({ user: user._id }).exec(),
+      this.certificateModel.deleteMany({ user: user._id }).exec(),
     ]);
 
     await user.deleteOne();

@@ -20,6 +20,7 @@ import {
   type LessonProgressDocument,
 } from "../lesson-progress/schemas/lesson-progress.schema";
 import { EnrollmentsService } from "../enrollments/enrollments.service";
+import { CourseCompletionService } from "../course-completion/course-completion.service";
 import type { CreateQuizDto } from "./dto/create-quiz.dto";
 import type { UpdateQuizDto } from "./dto/update-quiz.dto";
 import type { CreateQuestionDto } from "./dto/create-question.dto";
@@ -41,6 +42,7 @@ export class QuizzesService {
     private readonly lessonProgressModel: Model<LessonProgressDocument>,
     @InjectModel(Module.name) private readonly moduleModel: Model<ModuleDocument>,
     private readonly enrollmentsService: EnrollmentsService,
+    private readonly courseCompletionService: CourseCompletionService,
   ) {}
 
   // ---------------------------------------------------------------------
@@ -392,6 +394,13 @@ export class QuizzesService {
     attempt.percentage = percentage;
     attempt.passed = passed;
     await attempt.save();
+
+    // A course-level ("final") quiz is the last gate for course completion —
+    // module quizzes don't trigger this since finishing one doesn't mean
+    // the course itself is done.
+    if (passed && !quiz.module) {
+      await this.courseCompletionService.checkAndIssue(userId, quiz.course.toString());
+    }
 
     return {
       attemptNumber: attempt.attemptNumber,

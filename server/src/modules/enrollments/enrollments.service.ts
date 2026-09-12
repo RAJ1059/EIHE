@@ -81,6 +81,22 @@ export class EnrollmentsService {
     return Boolean(enrollment);
   }
 
+  findOne(userId: string, courseId: string) {
+    return this.enrollmentModel.findOne({ user: userId, course: courseId }).exec();
+  }
+
+  /** Marks an active enrollment completed. No-ops if it's already completed
+   * or isn't active (e.g. cancelled/expired) — called after course-progress
+   * checks, never as a direct user action. */
+  async markCompleted(userId: string, courseId: string): Promise<void> {
+    await this.enrollmentModel
+      .updateOne(
+        { user: userId, course: courseId, status: EnrollmentStatus.ACTIVE },
+        { $set: { status: EnrollmentStatus.COMPLETED, completedAt: new Date() } },
+      )
+      .exec();
+  }
+
   findForUser(userId: string) {
     return this.enrollmentModel
       .find({ user: userId })

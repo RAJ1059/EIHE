@@ -11,6 +11,7 @@ import {
   type QuizAttemptDocument,
 } from "../quizzes/schemas/quiz-attempt.schema";
 import { EnrollmentsService } from "../enrollments/enrollments.service";
+import { CourseCompletionService } from "../course-completion/course-completion.service";
 import { extractYoutubeVideoId } from "../../common/utils/youtube";
 import { slugify } from "../../common/utils/slugify";
 import type { CreateLessonDto } from "./dto/create-lesson.dto";
@@ -27,6 +28,7 @@ export class LessonsService {
     @InjectModel(Quiz.name) private readonly quizModel: Model<QuizDocument>,
     @InjectModel(QuizAttempt.name) private readonly quizAttemptModel: Model<QuizAttemptDocument>,
     private readonly enrollmentsService: EnrollmentsService,
+    private readonly courseCompletionService: CourseCompletionService,
   ) {}
 
   findByModule(moduleId: string) {
@@ -204,6 +206,11 @@ export class LessonsService {
       },
       { upsert: true },
     );
+
+    // Courses with no final quiz complete as soon as every lesson is done —
+    // checkAndIssue() is a no-op if the course does have final quizzes still
+    // pending, so it's safe to call unconditionally here.
+    await this.courseCompletionService.checkAndIssue(userId, lesson.course.toString());
 
     return { completed: true };
   }

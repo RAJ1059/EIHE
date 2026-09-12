@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/student/dashboard", label: "Dashboard" },
   { href: "/student/courses/browse", label: "All Courses" },
   { href: "/student/courses", label: "My Courses" },
+  { href: "/student/certificates", label: "My Certificates" },
   { href: "/student/profile", label: "Profile" },
   { href: "/student/cart", label: "My Cart" },
 ];
