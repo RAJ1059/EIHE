@@ -28,6 +28,21 @@ export function getAdminUser(accessToken: string, id: string) {
   return apiFetch<LmsAdminUser>(`/admin/users/${id}`, { accessToken });
 }
 
+export type CreateUserInput = {
+  name: string;
+  email: string;
+  password: string;
+  role: LmsRole;
+};
+
+export function createUser(accessToken: string, input: CreateUserInput) {
+  return apiFetch<LmsAdminUser>("/admin/users", {
+    method: "POST",
+    accessToken,
+    body: input,
+  });
+}
+
 export function getUserEnrollments(accessToken: string, id: string) {
   return apiFetch<Enrollment[]>(`/admin/users/${id}/enrollments`, { accessToken });
 }

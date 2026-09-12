@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { PortalTopBar } from "@/components/lms/ui/PortalTopBar";
@@ -21,6 +21,7 @@ const NAV_ITEMS = [
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) router.replace("/login");
@@ -43,10 +44,23 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           label="Student Portal"
           userName={user.name}
           onLogout={() => logout().then(() => router.push("/login"))}
+          onMenuClick={() => setMobileNavOpen((v) => !v)}
         />
-        <div className="flex flex-1 flex-col lg:flex-row">
-          <aside className="w-full shrink-0 bg-gradient-to-b from-sage to-[#040f31] px-4 py-4 lg:w-56 lg:py-8">
-            <div className="hidden rounded-xl bg-white/10 px-3 py-2.5 lg:block">
+        <div className="relative flex flex-1">
+          {mobileNavOpen && (
+            <div
+              className="fixed inset-0 z-30 bg-ink/40 lg:hidden"
+              onClick={() => setMobileNavOpen(false)}
+              aria-hidden="true"
+            />
+          )}
+          <aside
+            onClick={() => setMobileNavOpen(false)}
+            className={`fixed inset-y-0 left-0 z-40 w-64 shrink-0 overflow-y-auto bg-gradient-to-b from-sage to-[#040f31] px-4 py-8 transition-transform duration-300 lg:static lg:z-auto lg:w-56 lg:translate-x-0 ${
+              mobileNavOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+          >
+            <div className="rounded-xl bg-white/10 px-3 py-2.5">
               <p className="text-[10px] font-semibold tracking-[0.15em] text-white/50 uppercase">
                 Workspace
               </p>
@@ -56,10 +70,10 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               layoutId="student-nav-active"
               variant="dark"
               items={NAV_ITEMS}
-              className="mt-0 flex gap-1 lg:mt-4 lg:flex-col lg:space-y-1"
+              className="mt-4 space-y-1"
             />
           </aside>
-          <div className="flex-1 px-6 py-8 lg:px-8">
+          <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             <PortalPageTransition>{children}</PortalPageTransition>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { ADMIN_ROLES, MANAGEMENT_ROLES, homePathForRole } from "@/lib/auth/roles";
@@ -28,6 +28,7 @@ const NAV_ITEMS = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -58,9 +59,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           label="Admin Portal"
           userName={user.name}
           onLogout={() => logout().then(() => router.push("/login"))}
+          onMenuClick={() => setMobileNavOpen((v) => !v)}
         />
-        <div className="flex flex-1">
-          <aside className="w-56 shrink-0 bg-gradient-to-b from-sage to-[#040f31] px-4 py-8">
+        <div className="relative flex flex-1">
+          {mobileNavOpen && (
+            <div
+              className="fixed inset-0 z-30 bg-ink/40 lg:hidden"
+              onClick={() => setMobileNavOpen(false)}
+              aria-hidden="true"
+            />
+          )}
+          <aside
+            onClick={() => setMobileNavOpen(false)}
+            className={`fixed inset-y-0 left-0 z-40 w-64 shrink-0 overflow-y-auto bg-gradient-to-b from-sage to-[#040f31] px-4 py-8 transition-transform duration-300 lg:static lg:z-auto lg:w-56 lg:translate-x-0 ${
+              mobileNavOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+          >
             <div className="rounded-xl bg-white/10 px-3 py-2.5">
               <p className="text-[10px] font-semibold tracking-[0.15em] text-white/50 uppercase">
                 Workspace
@@ -76,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className="mt-4 space-y-1"
             />
           </aside>
-          <div className="flex-1 px-8 py-8">
+          <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             <PortalPageTransition>{children}</PortalPageTransition>
           </div>
         </div>

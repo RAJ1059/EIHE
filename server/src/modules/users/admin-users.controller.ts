@@ -12,6 +12,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
+import { CreateUserDto } from "./dto/create-user.dto";
 import { QueryUsersDto } from "./dto/query-users.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { SetUserActiveDto } from "./dto/set-user-active.dto";
@@ -36,6 +37,14 @@ export class AdminUsersController {
   @Get()
   findAll(@Query() query: QueryUsersDto) {
     return this.usersService.findAll(query);
+  }
+
+  // Role-only-updatable and role-assignable-at-creation are the same power
+  // — restricted to SUPER_ADMIN, matching updateRole below.
+  @Post()
+  @Roles(Role.SUPER_ADMIN)
+  create(@Body() dto: CreateUserDto) {
+    return this.usersService.createByAdmin(dto);
   }
 
   @Get(":id")

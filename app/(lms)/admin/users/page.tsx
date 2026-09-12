@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
+  createUser,
   deleteUser,
   listAdminUsers,
   setUserActive,
@@ -11,7 +12,9 @@ import {
 } from "@/lib/api/admin-users";
 import { ApiError } from "@/lib/api/client";
 import type { LmsAdminUser, LmsRole } from "@/types/lms";
-import { Input, Select } from "@/components/lms/ui/Input";
+import { Card } from "@/components/lms/ui/Card";
+import { FormButton } from "@/components/lms/ui/FormButton";
+import { Input, Label, Select, FieldError } from "@/components/lms/ui/Input";
 import { PencilIcon, KeyIcon, LockIcon, UnlockIcon, TrashIcon } from "@/components/ui/icons";
 
 const ROLE_STYLES: Record<LmsRole, string> = {
@@ -44,6 +47,7 @@ export default function AdminUsersPage() {
   const [status, setStatus] = useState<DerivedStatus | "">("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   function load() {
     if (!accessToken) return;
@@ -119,8 +123,27 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-ink">Users</h1>
-      <p className="mt-1 text-sm text-ink/60">Search, filter, edit and manage platform users.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">Users</h1>
+          <p className="mt-1 text-sm text-ink/60">Search, filter, edit and manage platform users.</p>
+        </div>
+        {currentUser?.role === "SUPER_ADMIN" && (
+          <FormButton onClick={() => setShowCreateForm((v) => !v)} variant="secondary">
+            {showCreateForm ? "Cancel" : "+ Add User"}
+          </FormButton>
+        )}
+      </div>
+
+      {showCreateForm && (
+        <CreateUserForm
+          onCreated={() => {
+            setShowCreateForm(false);
+            setNotice("User account created.");
+            load();
+          }}
+        />
+      )}
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Input
@@ -261,5 +284,83 @@ export default function AdminUsersPage() {
         </table>
       </div>
     </div>
+  );
+}
+
+function CreateUserForm({ onCreated }: { onCreated: () => void }) {
+  const { accessToken } = useAuth();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<LmsRole>("STUDENT");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!accessToken) return;
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await createUser(accessToken, { name, email, password, role });
+      setName("");
+      setEmail("");
+      setPassword("");
+      setRole("STUDENT");
+      onCreated();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not create this account.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Card className="mt-6">
+      <h2 className="font-bold text-ink">New User Account</h2>
+      <form onSubmit={handleSubmit} className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="new-user-name">Full name</Label>
+          <Input id="new-user-name" required value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div>
+          <Label htmlFor="new-user-email">Email</Label>
+          <Input
+            id="new-user-email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="new-user-password">Password</Label>
+          <Input
+            id="new-user-password"
+            type="password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="new-user-role">Role</Label>
+          <Select id="new-user-role" value={role} onChange={(e) => setRole(e.target.value as LmsRole)}>
+            <option value="STUDENT">Student</option>
+            <option value="INSTRUCTOR">Instructor</option>
+            <option value="ADMIN">Admin</option>
+            <option value="SUPER_ADMIN">Super Admin</option>
+          </Select>
+        </div>
+
+        <div className="sm:col-span-2">
+          <FieldError message={error} />
+          <FormButton type="submit" loading={isSubmitting} className="mt-2">
+            Create Account
+          </FormButton>
+        </div>
+      </form>
+    </Card>
   );
 }

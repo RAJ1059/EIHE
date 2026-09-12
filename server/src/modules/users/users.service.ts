@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { ConfigService } from "@nestjs/config";
 import { FilterQuery, Model, Types } from "mongoose";
+import * as bcrypt from "bcrypt";
 import { User, type UserDocument } from "./schemas/user.schema";
 import { Enrollment, type EnrollmentDocument } from "../enrollments/schemas/enrollment.schema";
 import {
@@ -14,8 +15,10 @@ import { EmailService } from "../email/email.service";
 import { Role } from "../../common/enums/role.enum";
 import { generateSecureToken, hashToken } from "../../common/utils/token";
 import type { UpdateProfileDto } from "./dto/update-profile.dto";
+import type { CreateUserDto } from "./dto/create-user.dto";
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const SALT_ROUNDS = 12;
 
 export type UserListQuery = {
   search?: string;
@@ -53,6 +56,23 @@ export class UsersService {
 
   create(params: { name: string; email: string; passwordHash: string; role?: Role }) {
     return this.userModel.create(params);
+  }
+
+  /** Admin-created account (as opposed to self-registration, which is
+   * always Role.STUDENT) — lets an admin set the role at creation time. */
+  async createByAdmin(dto: CreateUserDto) {
+    const existing = await this.findByEmail(dto.email);
+    if (existing) {
+      throw new ConflictException("An account with this email already exists.");
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
+    return this.create({
+      name: dto.name,
+      email: dto.email,
+      passwordHash,
+      role: dto.role,
+    });
   }
 
   findByGoogleId(googleId: string) {

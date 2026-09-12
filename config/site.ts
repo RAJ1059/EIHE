@@ -3,6 +3,7 @@
  */
 export const siteConfig = {
   name: "EIHE",
+  fullName: "European Institute For Healthcare Excellence",
   logo: "/images/Logo.png",
   tagline: "Medical Education for the Global Healthcare Workforce",
   description:

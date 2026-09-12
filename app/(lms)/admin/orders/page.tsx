@@ -71,8 +71,8 @@ export default function AdminOrdersPage() {
 
       {error && <p className="mt-6 text-sm text-red-600">{error}</p>}
 
-      <Reveal className="mt-6 overflow-hidden rounded-2xl border border-ink/10 bg-white">
-        <table className="w-full text-left text-sm">
+      <Reveal className="mt-6 overflow-x-auto rounded-2xl border border-ink/10 bg-white">
+        <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="bg-cream text-xs font-semibold tracking-wide text-ink/60 uppercase">
             <tr>
               <th className="px-4 py-3">Buyer</th>
