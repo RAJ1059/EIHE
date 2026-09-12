@@ -377,7 +377,9 @@ export type LmsCourseDetailReport = {
 };
 
 export type LmsAdminOrder = Omit<LmsOrder, "user"> & {
-  user: { _id: string; name: string; email: string };
+  // null when the buyer's account has since been deleted — the order
+  // itself is kept (billingInfo already has a name/email snapshot).
+  user: { _id: string; name: string; email: string } | null;
 };
 
 export type LmsSiteSettings = {

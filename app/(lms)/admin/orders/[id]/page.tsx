@@ -120,8 +120,15 @@ export default function AdminOrderDetailPage() {
           <div className="space-y-6">
             <Card>
               <h2 className="text-sm font-semibold tracking-wide text-ink/60 uppercase">Buyer</h2>
-              <p className="mt-2 font-medium text-ink">{order.user.name}</p>
-              <p className="text-sm text-ink/60">{order.user.email}</p>
+              <p className="mt-2 font-medium text-ink">
+                {order.user?.name ?? order.billingInfo.name}
+              </p>
+              <p className="text-sm text-ink/60">{order.user?.email ?? order.billingInfo.email}</p>
+              {!order.user && (
+                <p className="mt-1 text-xs text-ink/40">
+                  This account has since been deleted — shown from the order&rsquo;s billing info.
+                </p>
+              )}
             </Card>
 
             <Card>

@@ -104,8 +104,13 @@ export default function AdminOrdersPage() {
             {orders?.map((order) => (
               <tr key={order._id} className="transition-colors hover:bg-cream/60">
                 <td className="px-4 py-3">
-                  <p className="font-medium text-ink">{order.user.name}</p>
-                  <p className="text-xs text-ink/50">{order.user.email}</p>
+                  <p className="font-medium text-ink">
+                    {order.user?.name ?? order.billingInfo.name}
+                  </p>
+                  <p className="text-xs text-ink/50">
+                    {order.user?.email ?? order.billingInfo.email}
+                    {!order.user && " (account deleted)"}
+                  </p>
                 </td>
                 <td className="px-4 py-3 text-ink/70">
                   {order.items.length} course{order.items.length === 1 ? "" : "s"}
