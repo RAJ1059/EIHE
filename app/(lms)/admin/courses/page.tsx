@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { deleteCourse, listAdminCourses } from "@/lib/api/courses";
+import { deleteCourse, duplicateCourse, listAdminCourses } from "@/lib/api/courses";
 import { ApiError } from "@/lib/api/client";
 import type { LmsCourse } from "@/types/lms";
 import { Reveal } from "@/components/motion/Reveal";
@@ -21,6 +21,7 @@ export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<LmsCourse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -58,6 +59,20 @@ export default function AdminCoursesPage() {
       setError(err instanceof ApiError ? err.message : "Could not delete this course.");
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleDuplicate(course: LmsCourse) {
+    if (!accessToken) return;
+    setError(null);
+    setDuplicatingId(course._id);
+    try {
+      const copy = await duplicateCourse(accessToken, course._id);
+      setCourses((prev) => (prev ? [copy, ...prev] : prev));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not duplicate this course.");
+    } finally {
+      setDuplicatingId(null);
     }
   }
 
@@ -133,6 +148,13 @@ export default function AdminCoursesPage() {
                   >
                     Edit
                   </Link>
+                  <button
+                    onClick={() => handleDuplicate(course)}
+                    disabled={duplicatingId === course._id}
+                    className="mr-4 text-sm font-semibold text-teal hover:underline disabled:opacity-50"
+                  >
+                    {duplicatingId === course._id ? "Duplicating…" : "Duplicate"}
+                  </button>
                   <button
                     onClick={() => handleDelete(course)}
                     disabled={deletingId === course._id}

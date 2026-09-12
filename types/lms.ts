@@ -34,6 +34,7 @@ export type LmsCourse = {
   shortDescription: string;
   description: string;
   featuredImage: string | null;
+  brochureUrl: string | null;
   category: LmsCategory | string;
   subcategory: LmsCategory | string | null;
   tags: string[];
@@ -435,6 +436,20 @@ export type LmsCertificate = {
   studentName: string;
   courseTitle: string;
   issuedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LmsFormType = "BROCHURE_DOWNLOAD";
+
+export type LmsFormSubmission = {
+  _id: string;
+  formType: LmsFormType;
+  name: string;
+  email: string;
+  phone: string;
+  course: string | null;
+  courseTitle: string;
   createdAt: string;
   updatedAt: string;
 };

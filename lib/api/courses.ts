@@ -47,6 +47,7 @@ export type CourseInput = {
   shortDescription?: string;
   description?: string;
   featuredImage?: string;
+  brochureUrl?: string;
   category: string;
   subcategory?: string;
   tags?: string[];
@@ -82,6 +83,13 @@ export function updateCourse(accessToken: string, id: string, input: Partial<Cou
 export function deleteCourse(accessToken: string, id: string) {
   return apiFetch<{ deleted: true } | null>(`/admin/courses/${id}`, {
     method: "DELETE",
+    accessToken,
+  });
+}
+
+export function duplicateCourse(accessToken: string, id: string) {
+  return apiFetch<LmsCourse>(`/admin/courses/${id}/duplicate`, {
+    method: "POST",
     accessToken,
   });
 }

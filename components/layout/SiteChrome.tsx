@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 
 // The Admin and Student portals are full-screen apps with their own
 // layout/nav — no marketing header, announcement bar, or footer around them.
@@ -26,6 +27,7 @@ export function SiteChrome({ children }: { children: ReactNode }) {
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
+      <WhatsAppButton />
     </>
   );
 }

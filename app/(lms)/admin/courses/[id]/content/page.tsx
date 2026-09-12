@@ -9,6 +9,7 @@ import { getAdminCourse } from "@/lib/api/courses";
 import {
   createModule,
   deleteModule,
+  duplicateModule,
   listAdminModules,
   reorderModules,
   updateModule,
@@ -16,6 +17,7 @@ import {
 import {
   createLesson,
   deleteLesson,
+  duplicateLesson,
   listAdminLessons,
   reorderLessons,
   updateLesson,
@@ -25,6 +27,7 @@ import {
   createFinalQuiz,
   createModuleQuiz,
   deleteQuiz,
+  duplicateQuiz,
   listFinalQuizzes,
   listModuleQuizzes,
 } from "@/lib/api/quizzes";
@@ -116,6 +119,12 @@ export default function CourseContentPage() {
     await refresh();
   }
 
+  async function handleDuplicateModule(moduleId: string) {
+    if (!accessToken) return;
+    await duplicateModule(accessToken, moduleId);
+    await refresh();
+  }
+
   async function handleAddLesson(moduleId: string, input: LessonInput) {
     if (!accessToken) return;
     await createLesson(accessToken, moduleId, input);
@@ -132,6 +141,12 @@ export default function CourseContentPage() {
     if (!accessToken) return;
     if (!confirm("Delete this lesson?")) return;
     await deleteLesson(accessToken, lessonId);
+    await refresh();
+  }
+
+  async function handleDuplicateLesson(lessonId: string) {
+    if (!accessToken) return;
+    await duplicateLesson(accessToken, lessonId);
     await refresh();
   }
 
@@ -169,6 +184,12 @@ export default function CourseContentPage() {
     await refresh();
   }
 
+  async function handleDuplicateQuiz(quizId: string) {
+    if (!accessToken) return;
+    await duplicateQuiz(accessToken, quizId);
+    await refresh();
+  }
+
   if (error) return <p className="text-sm text-red-600">{error}</p>;
 
   return (
@@ -194,12 +215,15 @@ export default function CourseContentPage() {
               onRename={(title) => handleRenameModule(module._id, title)}
               onUpdateImage={(image) => handleUpdateModuleImage(module._id, image)}
               onDelete={() => handleDeleteModule(module._id)}
+              onDuplicate={() => handleDuplicateModule(module._id)}
               onAddLesson={(input) => handleAddLesson(module._id, input)}
               onUpdateLesson={handleUpdateLesson}
               onDeleteLesson={handleDeleteLesson}
+              onDuplicateLesson={handleDuplicateLesson}
               onMoveLesson={(lessonId, direction) => handleMoveLesson(module, lessonId, direction)}
               onAddQuiz={() => handleAddModuleQuiz(module._id)}
               onDeleteQuiz={handleDeleteQuiz}
+              onDuplicateQuiz={handleDuplicateQuiz}
             />
           ))}
 
@@ -225,7 +249,12 @@ export default function CourseContentPage() {
             </p>
             <ul className="mt-4 divide-y divide-ink/5">
               {finalQuizzes?.map((quiz) => (
-                <QuizRow key={quiz._id} quiz={quiz} onDelete={() => handleDeleteQuiz(quiz._id)} />
+                <QuizRow
+                  key={quiz._id}
+                  quiz={quiz}
+                  onDelete={() => handleDeleteQuiz(quiz._id)}
+                  onDuplicate={() => handleDuplicateQuiz(quiz._id)}
+                />
               ))}
               {finalQuizzes?.length === 0 && (
                 <li className="py-3 text-sm text-ink/40">No final quiz yet.</li>
@@ -284,12 +313,15 @@ function ModuleCard({
   onRename,
   onUpdateImage,
   onDelete,
+  onDuplicate,
   onAddLesson,
   onUpdateLesson,
   onDeleteLesson,
+  onDuplicateLesson,
   onMoveLesson,
   onAddQuiz,
   onDeleteQuiz,
+  onDuplicateQuiz,
 }: {
   module: ModuleWithContent;
   isFirst: boolean;
@@ -298,12 +330,15 @@ function ModuleCard({
   onRename: (title: string) => void;
   onUpdateImage: (image: string) => void;
   onDelete: () => void;
+  onDuplicate: () => void;
   onAddLesson: (input: LessonInput) => Promise<void>;
   onUpdateLesson: (lessonId: string, input: Partial<LessonInput>) => Promise<void>;
   onDeleteLesson: (lessonId: string) => void;
+  onDuplicateLesson: (lessonId: string) => void;
   onMoveLesson: (lessonId: string, direction: -1 | 1) => void;
   onAddQuiz: () => void;
   onDeleteQuiz: (quizId: string) => void;
+  onDuplicateQuiz: (quizId: string) => void;
 }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [title, setTitle] = useState(module.title);
@@ -393,6 +428,13 @@ function ModuleCard({
           </button>
           <button
             type="button"
+            onClick={onDuplicate}
+            className="text-sm font-semibold text-teal hover:underline"
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
             onClick={onDelete}
             className="text-sm font-semibold text-red-600 hover:underline"
           >
@@ -431,10 +473,16 @@ function ModuleCard({
             onMove={(direction) => onMoveLesson(lesson._id, direction)}
             onUpdate={(input) => onUpdateLesson(lesson._id, input)}
             onDelete={() => onDeleteLesson(lesson._id)}
+            onDuplicate={() => onDuplicateLesson(lesson._id)}
           />
         ))}
         {module.quizzes.map((quiz) => (
-          <QuizRow key={quiz._id} quiz={quiz} onDelete={() => onDeleteQuiz(quiz._id)} />
+          <QuizRow
+            key={quiz._id}
+            quiz={quiz}
+            onDelete={() => onDeleteQuiz(quiz._id)}
+            onDuplicate={() => onDuplicateQuiz(quiz._id)}
+          />
         ))}
         {module.lessons.length === 0 && module.quizzes.length === 0 && (
           <li className="py-3 text-sm text-ink/40">No lessons or quizzes in this module yet.</li>
@@ -456,7 +504,15 @@ function ModuleCard({
   );
 }
 
-function QuizRow({ quiz, onDelete }: { quiz: LmsQuiz; onDelete: () => void }) {
+function QuizRow({
+  quiz,
+  onDelete,
+  onDuplicate,
+}: {
+  quiz: LmsQuiz;
+  onDelete: () => void;
+  onDuplicate: () => void;
+}) {
   return (
     <li className="flex items-center justify-between py-3">
       <div>
@@ -476,6 +532,13 @@ function QuizRow({ quiz, onDelete }: { quiz: LmsQuiz; onDelete: () => void }) {
         </Link>
         <button
           type="button"
+          onClick={onDuplicate}
+          className="text-xs font-semibold text-teal hover:underline"
+        >
+          Duplicate
+        </button>
+        <button
+          type="button"
           onClick={onDelete}
           className="text-xs font-semibold text-red-600 hover:underline"
         >
@@ -493,6 +556,7 @@ function LessonRow({
   onMove,
   onUpdate,
   onDelete,
+  onDuplicate,
 }: {
   lesson: LmsLesson;
   isFirst: boolean;
@@ -500,6 +564,7 @@ function LessonRow({
   onMove: (direction: -1 | 1) => void;
   onUpdate: (input: Partial<LessonInput>) => Promise<void>;
   onDelete: () => void;
+  onDuplicate: () => void;
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -543,6 +608,13 @@ function LessonRow({
             className="text-xs font-semibold text-teal hover:underline"
           >
             {editing ? "Close" : "Edit"}
+          </button>
+          <button
+            type="button"
+            onClick={onDuplicate}
+            className="text-xs font-semibold text-teal hover:underline"
+          >
+            Duplicate
           </button>
           <button
             type="button"

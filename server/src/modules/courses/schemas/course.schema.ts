@@ -49,6 +49,9 @@ export class Course {
   @Prop({ type: String, default: null })
   featuredImage!: string | null;
 
+  @Prop({ type: String, default: null })
+  brochureUrl!: string | null;
+
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: "Category", required: true })
   category!: Types.ObjectId;
 

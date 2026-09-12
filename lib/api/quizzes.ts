@@ -109,6 +109,10 @@ export function deleteQuiz(accessToken: string, id: string) {
   return apiFetch<null>(`/admin/quizzes/${id}`, { method: "DELETE", accessToken });
 }
 
+export function duplicateQuiz(accessToken: string, id: string) {
+  return apiFetch<LmsQuiz>(`/admin/quizzes/${id}/duplicate`, { method: "POST", accessToken });
+}
+
 export function reorderQuizzes(accessToken: string, orderedIds: string[]) {
   return apiFetch<null>(`/admin/quizzes/reorder`, {
     method: "PUT",

@@ -32,6 +32,10 @@ export function deleteModule(accessToken: string, id: string) {
   return apiFetch<null>(`/admin/modules/${id}`, { method: "DELETE", accessToken });
 }
 
+export function duplicateModule(accessToken: string, id: string) {
+  return apiFetch<LmsModule>(`/admin/modules/${id}/duplicate`, { method: "POST", accessToken });
+}
+
 export function reorderModules(accessToken: string, orderedIds: string[]) {
   return apiFetch<null>(`/admin/modules/reorder`, {
     method: "PUT",

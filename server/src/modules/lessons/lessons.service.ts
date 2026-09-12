@@ -81,6 +81,34 @@ export class LessonsService {
     await lesson.deleteOne();
   }
 
+  /** Clones a lesson within its own module, appended at the end. */
+  async duplicate(id: string) {
+    const original = await this.findByIdOrThrow(id);
+    const count = await this.lessonModel.countDocuments({ module: original.module }).exec();
+    const title = `${original.title} (Copy)`;
+
+    return this.lessonModel.create({
+      title,
+      slug: this.slugFor(title, count),
+      description: original.description,
+      content: original.content,
+      module: original.module,
+      course: original.course,
+      videoType: original.videoType,
+      youtubeUrl: original.youtubeUrl,
+      youtubeVideoId: original.youtubeVideoId,
+      duration: original.duration,
+      order: count,
+      requirePreviousLesson: original.requirePreviousLesson,
+      allowFreePreview: original.allowFreePreview,
+      topics: original.topics.map((topic) => ({
+        title: topic.title,
+        content: topic.content,
+        order: topic.order,
+      })),
+    });
+  }
+
   async reorder(dto: ReorderDto) {
     await Promise.all(
       dto.orderedIds.map((id, index) =>

@@ -44,6 +44,10 @@ export class CreateCourseDto {
   @IsString()
   featuredImage?: string;
 
+  @IsOptional()
+  @IsString()
+  brochureUrl?: string;
+
   @IsMongoId()
   category!: string;
 

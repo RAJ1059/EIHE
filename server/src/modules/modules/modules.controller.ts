@@ -39,4 +39,9 @@ export class AdminModulesController {
   remove(@Param("id") id: string) {
     return this.modulesService.remove(id);
   }
+
+  @Post("modules/:id/duplicate")
+  duplicate(@Param("id") id: string) {
+    return this.modulesService.duplicate(id);
+  }
 }

@@ -58,6 +58,10 @@ export function deleteLesson(accessToken: string, id: string) {
   return apiFetch<null>(`/admin/lessons/${id}`, { method: "DELETE", accessToken });
 }
 
+export function duplicateLesson(accessToken: string, id: string) {
+  return apiFetch<LmsLesson>(`/admin/lessons/${id}/duplicate`, { method: "POST", accessToken });
+}
+
 export function reorderLessons(accessToken: string, orderedIds: string[]) {
   return apiFetch<null>(`/admin/lessons/reorder`, {
     method: "PUT",

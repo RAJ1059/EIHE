@@ -13,13 +13,16 @@ import { RichTextContent } from "@/components/lms/ui/RichTextContent";
 import { cn } from "@/components/lms/ui/cn";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useCart } from "@/lib/cart/CartContext";
+import { BrochureDownloadModal } from "@/components/lms/course/BrochureDownloadModal";
 import {
   ChevronDownIcon,
   CheckIcon,
   ClockIcon,
   DocumentIcon,
+  DownloadIcon,
   GraduationCapIcon,
   LockIcon,
+  PlusIcon,
 } from "@/components/ui/icons";
 
 function formatDateTime(iso: string): string {
@@ -61,6 +64,7 @@ export function CourseDetailContent({
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
+  const [showBrochureModal, setShowBrochureModal] = useState(false);
   const isPortal = variant === "portal";
 
   useEffect(() => {
@@ -191,6 +195,33 @@ export function CourseDetailContent({
     setExpandedModuleId((current) => (current === id ? null : id));
   }
 
+  // Drives the floating "Enroll Now" button — mirrors whatever the sidebar's
+  // primary CTA would do in the current state, so it's a second entry point
+  // to the exact same action rather than separate logic to keep in sync.
+  function handlePrimaryAction() {
+    if (isEnrolled) {
+      router.push(`/student/courses/${course!.slug}`);
+      return;
+    }
+    if (!user) {
+      if (isFree) {
+        router.push(`${registerPath}?next=/courses/${course!.slug}`);
+      } else {
+        handleGuestCheckout();
+      }
+      return;
+    }
+    if (isFree) {
+      handleEnrollFree();
+      return;
+    }
+    if (inCart) {
+      router.push(cartPath);
+      return;
+    }
+    handleAddToCart();
+  }
+
   const body = (
     <div>
       <div className={isPortal ? "" : "mx-auto max-w-6xl px-6 pt-10 sm:pt-14"}>
@@ -221,6 +252,29 @@ export function CourseDetailContent({
               <p className="mt-3 text-white/85">{course.shortDescription}</p>
             )}
           </div>
+
+          {!isPortal && (
+            <div className="absolute right-4 bottom-4 z-10 flex flex-col items-end gap-3 sm:right-6 sm:bottom-6">
+              {course.brochureUrl && (
+                <button
+                  type="button"
+                  onClick={() => setShowBrochureModal(true)}
+                  className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.04] active:scale-[0.97]"
+                >
+                  <DownloadIcon className="h-4 w-4" />
+                  Download Brochure
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handlePrimaryAction}
+                className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.04] active:scale-[0.97]"
+              >
+                <PlusIcon className="h-4 w-4" />
+                Enroll Now
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -478,6 +532,15 @@ export function CourseDetailContent({
           )}
         </aside>
       </div>
+
+      {course.brochureUrl && (
+        <BrochureDownloadModal
+          open={showBrochureModal}
+          onClose={() => setShowBrochureModal(false)}
+          brochureUrl={course.brochureUrl}
+          courseId={course._id}
+        />
+      )}
     </div>
   );
 

@@ -71,6 +71,11 @@ export class AdminCoursesController {
     return this.coursesService.remove(id);
   }
 
+  @Post(":id/duplicate")
+  duplicate(@Param("id") id: string) {
+    return this.coursesService.duplicate(id);
+  }
+
   @Put(":id/submit-for-review")
   submitForReview(@Param("id") id: string) {
     return this.coursesService.submitForReview(id);

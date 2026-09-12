@@ -28,6 +28,7 @@ export function CourseForm({
   );
   const [description, setDescription] = useState(initialCourse?.description ?? "");
   const [featuredImage, setFeaturedImage] = useState(initialCourse?.featuredImage ?? "");
+  const [brochureUrl, setBrochureUrl] = useState(initialCourse?.brochureUrl ?? "");
   const [category, setCategory] = useState(
     typeof initialCourse?.category === "object" ? initialCourse.category._id : "",
   );
@@ -65,6 +66,7 @@ export function CourseForm({
         shortDescription,
         description,
         featuredImage: featuredImage.trim() || undefined,
+        brochureUrl: brochureUrl.trim() || undefined,
         category,
         difficultyLevel,
         duration,
@@ -131,6 +133,20 @@ export function CourseForm({
         </div>
         <p className="mt-1.5 text-xs text-ink/50">
           Shown on the course card, the course detail page, and as the fallback module image.
+        </p>
+      </div>
+
+      <div>
+        <Label htmlFor="brochureUrl">Brochure URL (PDF)</Label>
+        <Input
+          id="brochureUrl"
+          placeholder="https://example.com/course-brochure.pdf"
+          value={brochureUrl}
+          onChange={(e) => setBrochureUrl(e.target.value)}
+        />
+        <p className="mt-1.5 text-xs text-ink/50">
+          Optional. When set, a &ldquo;Download Brochure&rdquo; button appears on this course&rsquo;s
+          public page. Leave blank to hide it.
         </p>
       </div>
 

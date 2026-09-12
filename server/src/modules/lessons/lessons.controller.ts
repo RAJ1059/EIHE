@@ -78,4 +78,9 @@ export class AdminLessonsController {
   remove(@Param("id") id: string) {
     return this.lessonsService.remove(id);
   }
+
+  @Post("lessons/:id/duplicate")
+  duplicate(@Param("id") id: string) {
+    return this.lessonsService.duplicate(id);
+  }
 }

@@ -17,6 +17,7 @@ import { OrdersModule } from "./modules/orders/orders.module";
 import { CouponsModule } from "./modules/coupons/coupons.module";
 import { SettingsModule } from "./modules/settings/settings.module";
 import { CertificatesModule } from "./modules/certificates/certificates.module";
+import { FormSubmissionsModule } from "./modules/form-submissions/form-submissions.module";
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { CertificatesModule } from "./modules/certificates/certificates.module";
     CouponsModule,
     SettingsModule,
     CertificatesModule,
+    FormSubmissionsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

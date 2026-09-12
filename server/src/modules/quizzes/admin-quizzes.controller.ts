@@ -70,6 +70,11 @@ export class AdminQuizzesController {
     return this.quizzesService.remove(id);
   }
 
+  @Post("quizzes/:id/duplicate")
+  duplicate(@Param("id") id: string) {
+    return this.quizzesService.duplicate(id);
+  }
+
   // --- Questions ---
 
   @Get("quizzes/:quizId/questions")

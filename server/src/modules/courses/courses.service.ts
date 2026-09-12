@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery, Model } from "mongoose";
+import { FilterQuery, Model, Types } from "mongoose";
 import { Course, CourseStatus, type CourseDocument } from "./schemas/course.schema";
 import { Module, type ModuleDocument } from "../modules/schemas/module.schema";
 import { Lesson, type LessonDocument } from "../lessons/schemas/lesson.schema";
@@ -91,6 +91,156 @@ export class CoursesService {
     ]);
 
     await course.deleteOne();
+  }
+
+  /**
+   * Deep-clones a course: the course itself, its modules, lessons, and
+   * quizzes (module-scoped and course-level "final" quizzes alike), and
+   * every question on those quizzes — all as brand-new documents, correctly
+   * re-linked to each other. The clone always lands as a DRAFT and never
+   * featured, regardless of the original's state, so nothing goes live
+   * unreviewed. Instructor/category/pricing/access settings are carried
+   * over as a starting point since they're normal editable fields, not
+   * publish-adjacent state.
+   */
+  async duplicate(id: string) {
+    const original = await this.findByIdOrThrow(id);
+
+    const title = `${original.title} (Copy)`;
+    const slug = await this.uniqueSlug(title);
+
+    const newCourse = await this.courseModel.create({
+      title,
+      slug,
+      shortDescription: original.shortDescription,
+      description: original.description,
+      featuredImage: original.featuredImage,
+      category: original.category,
+      subcategory: original.subcategory,
+      tags: original.tags,
+      instructor: original.instructor,
+      difficultyLevel: original.difficultyLevel,
+      duration: original.duration,
+      language: original.language,
+      price: original.price,
+      salePrice: original.salePrice,
+      currency: original.currency,
+      status: CourseStatus.DRAFT,
+      isFeatured: false,
+      accessType: original.accessType,
+      accessDurationType: original.accessDurationType,
+      accessDurationDays: original.accessDurationDays,
+      accessExpiryDate: original.accessExpiryDate,
+      enrollmentStartDate: original.enrollmentStartDate,
+      enrollmentEndDate: original.enrollmentEndDate,
+      prerequisites: original.prerequisites,
+      certificateEnabled: original.certificateEnabled,
+      completionMinProgressPercent: original.completionMinProgressPercent,
+    });
+
+    const modules = await this.moduleModel.find({ course: id }).sort({ order: 1 }).exec();
+    const moduleIdMap = new Map<string, Types.ObjectId>();
+    await Promise.all(
+      modules.map(async (mod) => {
+        const newModule = await this.moduleModel.create({
+          title: mod.title,
+          description: mod.description,
+          image: mod.image,
+          course: newCourse._id,
+          order: mod.order,
+          status: mod.status,
+        });
+        moduleIdMap.set(mod._id.toString(), newModule._id);
+      }),
+    );
+
+    const lessons = await this.lessonModel.find({ course: id }).sort({ order: 1 }).exec();
+    await Promise.all(
+      lessons.map((lesson) => {
+        const newModuleId = moduleIdMap.get(lesson.module.toString());
+        if (!newModuleId) return null;
+        // The (course, slug) unique index is scoped per course, so reusing
+        // the same slug string under the new course id can't collide.
+        return this.lessonModel.create({
+          title: lesson.title,
+          slug: lesson.slug,
+          description: lesson.description,
+          content: lesson.content,
+          module: newModuleId,
+          course: newCourse._id,
+          videoType: lesson.videoType,
+          youtubeUrl: lesson.youtubeUrl,
+          youtubeVideoId: lesson.youtubeVideoId,
+          duration: lesson.duration,
+          order: lesson.order,
+          requirePreviousLesson: lesson.requirePreviousLesson,
+          allowFreePreview: lesson.allowFreePreview,
+          topics: lesson.topics.map((topic) => ({
+            title: topic.title,
+            content: topic.content,
+            order: topic.order,
+          })),
+        });
+      }),
+    );
+
+    const quizzes = await this.quizModel.find({ course: id }).sort({ order: 1 }).exec();
+    const quizIdMap = new Map<string, Types.ObjectId>();
+    await Promise.all(
+      quizzes.map(async (quiz) => {
+        let newModuleId: Types.ObjectId | null = null;
+        if (quiz.module) {
+          const mapped = moduleIdMap.get(quiz.module.toString());
+          // A quiz whose module reference is already dangling (points at a
+          // module that no longer exists) is stale data, not a real final
+          // quiz — skip it rather than silently reclassifying it as one.
+          if (!mapped) return null;
+          newModuleId = mapped;
+        }
+        const newQuiz = await this.quizModel.create({
+          title: quiz.title,
+          description: quiz.description,
+          course: newCourse._id,
+          module: newModuleId,
+          order: quiz.order,
+          passingPercentage: quiz.passingPercentage,
+          timeLimitMinutes: quiz.timeLimitMinutes,
+          maxAttempts: quiz.maxAttempts,
+          retakeDelayMinutes: quiz.retakeDelayMinutes,
+          randomizeQuestions: quiz.randomizeQuestions,
+          randomizeAnswers: quiz.randomizeAnswers,
+          showCorrectAnswers: quiz.showCorrectAnswers,
+          showResults: quiz.showResults,
+        });
+        quizIdMap.set(quiz._id.toString(), newQuiz._id);
+      }),
+    );
+
+    if (quizIdMap.size > 0) {
+      const questions = await this.questionModel
+        .find({ quiz: { $in: [...quizIdMap.keys()] } })
+        .exec();
+      await Promise.all(
+        questions.map((question) => {
+          const newQuizId = quizIdMap.get(question.quiz.toString());
+          if (!newQuizId) return null;
+          return this.questionModel.create({
+            quiz: newQuizId,
+            text: question.text,
+            type: question.type,
+            options: question.options.map((option) => ({
+              text: option.text,
+              isCorrect: option.isCorrect,
+            })),
+            correctAnswers: question.correctAnswers,
+            points: question.points,
+            order: question.order,
+          });
+        }),
+      );
+    }
+
+    return this.findByIdOrThrow(newCourse._id.toString());
   }
 
   /**

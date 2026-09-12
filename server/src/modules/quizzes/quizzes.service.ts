@@ -117,6 +117,51 @@ export class QuizzesService {
     await quiz.deleteOne();
   }
 
+  /** Clones a quiz (module-scoped or a course-level final quiz) together
+   * with all of its questions, appended within the same scope. */
+  async duplicate(id: string) {
+    const original = await this.findByIdOrThrow(id);
+    const count = await this.quizModel
+      .countDocuments({ course: original.course, module: original.module })
+      .exec();
+
+    const newQuiz = await this.quizModel.create({
+      title: `${original.title} (Copy)`,
+      description: original.description,
+      course: original.course,
+      module: original.module,
+      order: count,
+      passingPercentage: original.passingPercentage,
+      timeLimitMinutes: original.timeLimitMinutes,
+      maxAttempts: original.maxAttempts,
+      retakeDelayMinutes: original.retakeDelayMinutes,
+      randomizeQuestions: original.randomizeQuestions,
+      randomizeAnswers: original.randomizeAnswers,
+      showCorrectAnswers: original.showCorrectAnswers,
+      showResults: original.showResults,
+    });
+
+    const questions = await this.questionModel.find({ quiz: id }).sort({ order: 1 }).exec();
+    await Promise.all(
+      questions.map((question) =>
+        this.questionModel.create({
+          quiz: newQuiz._id,
+          text: question.text,
+          type: question.type,
+          options: question.options.map((option) => ({
+            text: option.text,
+            isCorrect: option.isCorrect,
+          })),
+          correctAnswers: question.correctAnswers,
+          points: question.points,
+          order: question.order,
+        }),
+      ),
+    );
+
+    return newQuiz;
+  }
+
   async reorder(dto: ReorderDto) {
     await Promise.all(
       dto.orderedIds.map((id, index) =>
