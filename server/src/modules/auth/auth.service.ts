@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -39,6 +40,7 @@ export interface PublicUser {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private googleClient: OAuth2Client | null = null;
 
   constructor(
@@ -238,7 +240,19 @@ export class AuthService {
 
     const frontendUrl = this.configService.get<string>("FRONTEND_URL") ?? "http://localhost:3000";
     const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
-    await this.emailService.sendPasswordResetEmail(user.email, resetUrl);
+
+    // Best-effort — the client always sees the same generic "if an account
+    // exists…" response regardless of outcome (so this can't be used to
+    // enumerate accounts), but an SMTP failure is still worth surfacing in
+    // the server logs since it means the user genuinely never got their
+    // reset link.
+    try {
+      await this.emailService.sendPasswordResetEmail(user.email, resetUrl);
+    } catch (err) {
+      this.logger.error(
+        `Failed to send password-reset email to ${user.email}: ${err instanceof Error ? err.message : err}`,
+      );
+    }
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {

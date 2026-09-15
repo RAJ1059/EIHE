@@ -22,7 +22,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const body = isHttpException ? exception.getResponse() : null;
-    const message = this.extractMessage(body, exception);
+    const message = this.extractMessage(body);
     const errorCode = this.extractErrorCode(body, status);
 
     if (!isHttpException) {
@@ -36,12 +36,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     });
   }
 
-  private extractMessage(body: unknown, exception: unknown): string {
+  private extractMessage(body: unknown): string {
     if (body && typeof body === "object" && "message" in body) {
       const raw = (body as { message: string | string[] }).message;
       return Array.isArray(raw) ? raw.join(", ") : raw;
     }
-    if (exception instanceof Error) return exception.message;
+    // Anything that isn't a deliberately-thrown HttpException (an unexpected
+    // error — a DB driver error, a third-party API/SMTP failure, etc.) never
+    // has its raw message sent to the client: that can leak internal
+    // infrastructure details (hostnames, credentials-adjacent text, stack
+    // info). The real message is already logged server-side above.
     return "Something went wrong. Please try again.";
   }
 

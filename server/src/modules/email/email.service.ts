@@ -58,6 +58,7 @@ export class EmailService {
         <p>If you didn't request this, you can safely ignore this email — your password won't change.</p>
       `,
     });
+    this.logger.log(`Password-reset email sent to ${to}`);
   }
 
   async sendVerificationEmail(to: string, verifyUrl: string): Promise<void> {
