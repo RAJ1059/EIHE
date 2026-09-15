@@ -18,6 +18,8 @@ import { CouponsModule } from "./modules/coupons/coupons.module";
 import { SettingsModule } from "./modules/settings/settings.module";
 import { CertificatesModule } from "./modules/certificates/certificates.module";
 import { FormSubmissionsModule } from "./modules/form-submissions/form-submissions.module";
+import { LiveSessionsModule } from "./modules/live-sessions/live-sessions.module";
+import { ForumModule } from "./modules/forum/forum.module";
 
 @Module({
   imports: [
@@ -43,6 +45,8 @@ import { FormSubmissionsModule } from "./modules/form-submissions/form-submissio
     SettingsModule,
     CertificatesModule,
     FormSubmissionsModule,
+    LiveSessionsModule,
+    ForumModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

@@ -24,6 +24,7 @@ import { Role } from "../../common/enums/role.enum";
 import type { CreateCourseDto } from "./dto/create-course.dto";
 import type { UpdateCourseDto } from "./dto/update-course.dto";
 import type { QueryCoursesDto } from "./dto/query-courses.dto";
+import type { AuthenticatedUser } from "../auth/strategies/jwt.strategy";
 
 const POPULATE = [
   { path: "category", select: "name slug" },
@@ -52,9 +53,9 @@ export class CoursesService {
     return this.courseModel.create({ ...dto, slug });
   }
 
-  async update(id: string, dto: UpdateCourseDto, requesterRole: Role) {
-    this.assertCanSetStatus(requesterRole, dto.status);
-    const course = await this.findByIdOrThrow(id);
+  async update(id: string, dto: UpdateCourseDto, requester: AuthenticatedUser) {
+    this.assertCanSetStatus(requester.role, dto.status);
+    const course = await this.findByIdOrThrowForAdmin(id, requester);
 
     if (dto.title && dto.title !== course.title) {
       course.slug = await this.uniqueSlug(dto.title, id);
@@ -103,8 +104,8 @@ export class CoursesService {
    * over as a starting point since they're normal editable fields, not
    * publish-adjacent state.
    */
-  async duplicate(id: string) {
-    const original = await this.findByIdOrThrow(id);
+  async duplicate(id: string, requester: AuthenticatedUser) {
+    const original = await this.findByIdOrThrowForAdmin(id, requester);
 
     const title = `${original.title} (Copy)`;
     const slug = await this.uniqueSlug(title);
@@ -256,8 +257,8 @@ export class CoursesService {
     );
   }
 
-  async submitForReview(id: string) {
-    const course = await this.findByIdOrThrow(id);
+  async submitForReview(id: string, requester: AuthenticatedUser) {
+    const course = await this.findByIdOrThrowForAdmin(id, requester);
     if (course.status !== CourseStatus.DRAFT) {
       throw new BadRequestException("Only a draft course can be submitted for review.");
     }
@@ -297,6 +298,41 @@ export class CoursesService {
       });
   }
 
+  /**
+   * Same as findByIdOrThrow, but also enforces that an INSTRUCTOR requester
+   * owns the course — Admin/Super Admin can always reach any course. Use
+   * this (not the plain findByIdOrThrow) for any admin-portal action an
+   * instructor can take on a *specific* course — viewing, editing,
+   * duplicating, submitting for review — so an instructor's "teacher
+   * portal" is actually scoped to their own courses, not just relying on
+   * the list view to hide the rest.
+   */
+  async findByIdOrThrowForAdmin(id: string, requester: AuthenticatedUser) {
+    const course = await this.findByIdOrThrow(id);
+    this.assertOwnership(course, requester);
+    return course;
+  }
+
+  private assertOwnership(course: CourseDocument, requester: AuthenticatedUser) {
+    if (requester.role !== Role.INSTRUCTOR) return;
+    if (this.extractRefId(course.instructor) !== requester.userId) {
+      throw new ForbiddenException("You can only manage your own courses.");
+    }
+  }
+
+  /**
+   * A ref field (like Course.instructor) is a raw ObjectId on a plain
+   * query, but a populated document once `.populate()` has run on it (as
+   * findByIdOrThrow does) — `.toString()` only returns the id in the first
+   * case, so callers that might see either need this instead.
+   */
+  private extractRefId(value: unknown): string {
+    if (value && typeof value === "object" && "_id" in value) {
+      return String((value as { _id: unknown })._id);
+    }
+    return String(value);
+  }
+
   async findBySlug(slug: string, { publishedOnly = true } = {}) {
     const filter: FilterQuery<CourseDocument> = { slug: slug.toLowerCase() };
     if (publishedOnly) filter.status = CourseStatus.PUBLISHED;
@@ -310,17 +346,23 @@ export class CoursesService {
     return this.paginate({ ...query, statuses: [CourseStatus.PUBLISHED] });
   }
 
-  async findAllForAdmin(query: QueryCoursesDto) {
-    return this.paginate(query);
+  async findAllForAdmin(query: QueryCoursesDto, requester: AuthenticatedUser) {
+    // Instructors only ever see their own courses in the admin portal — this
+    // is enforced here from the requester's identity, never from a
+    // client-suppliable query param, so it can't be spoofed. Admin/Super
+    // Admin see everything, same as before.
+    const instructorId = requester.role === Role.INSTRUCTOR ? requester.userId : undefined;
+    return this.paginate({ ...query, instructorId });
   }
 
   private async paginate(
-    query: QueryCoursesDto & { statuses?: CourseStatus[] },
+    query: QueryCoursesDto & { statuses?: CourseStatus[]; instructorId?: string },
   ) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 12;
 
     const filter: FilterQuery<CourseDocument> = {};
+    if (query.instructorId) filter.instructor = query.instructorId;
     if (query.statuses) filter.status = { $in: query.statuses };
     else if (query.status) filter.status = query.status;
     if (query.category) filter.category = query.category;

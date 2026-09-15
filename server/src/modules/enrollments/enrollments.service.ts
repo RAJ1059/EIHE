@@ -74,9 +74,19 @@ export class EnrollmentsService {
     }
   }
 
+  /**
+   * "Enrolled" means the student still has access — that includes a
+   * COMPLETED enrollment (they finished the course; that shouldn't revoke
+   * access to review lessons, take the forum/live sessions, etc.), just not
+   * an EXPIRED or CANCELLED one.
+   */
   async isEnrolled(userId: string, courseId: string): Promise<boolean> {
     const enrollment = await this.enrollmentModel
-      .exists({ user: userId, course: courseId, status: EnrollmentStatus.ACTIVE })
+      .exists({
+        user: userId,
+        course: courseId,
+        status: { $in: [EnrollmentStatus.ACTIVE, EnrollmentStatus.COMPLETED] },
+      })
       .exec();
     return Boolean(enrollment);
   }

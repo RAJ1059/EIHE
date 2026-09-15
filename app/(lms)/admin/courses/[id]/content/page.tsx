@@ -31,7 +31,24 @@ import {
   listFinalQuizzes,
   listModuleQuizzes,
 } from "@/lib/api/quizzes";
-import type { LmsCourse, LmsLesson, LmsModule, LmsQuiz } from "@/types/lms";
+import {
+  createLiveSession,
+  deleteLiveSession,
+  listAdminLiveSessions,
+} from "@/lib/api/live-sessions";
+import {
+  deleteThreadAsModerator,
+  listThreadsForAdmin,
+  setThreadPinned,
+} from "@/lib/api/forum";
+import type {
+  LmsCourse,
+  LmsLesson,
+  LmsLiveSession,
+  LmsModule,
+  LmsForumThread,
+  LmsQuiz,
+} from "@/types/lms";
 import { Card } from "@/components/lms/ui/Card";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { Input, Label, Textarea } from "@/components/lms/ui/Input";
@@ -261,9 +278,237 @@ export default function CourseContentPage() {
               )}
             </ul>
           </Card>
+
+          <LiveSessionsSection courseId={params.id} />
+          <DiscussionsSection courseId={params.id} />
         </div>
       )}
     </div>
+  );
+}
+
+function LiveSessionsSection({ courseId }: { courseId: string }) {
+  const { accessToken } = useAuth();
+  const [sessions, setSessions] = useState<LmsLiveSession[] | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [title, setTitle] = useState("");
+  const [meetingUrl, setMeetingUrl] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState("60");
+  const [saving, setSaving] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!accessToken) return;
+    setSessions(await listAdminLiveSessions(accessToken, courseId));
+  }, [accessToken, courseId]);
+
+  useEffect(() => {
+    async function load() {
+      await refresh();
+    }
+    load();
+  }, [refresh]);
+
+  async function handleAdd() {
+    if (!accessToken || !title.trim() || !meetingUrl.trim() || !scheduledAt) return;
+    setSaving(true);
+    try {
+      await createLiveSession(accessToken, courseId, {
+        title: title.trim(),
+        meetingUrl: meetingUrl.trim(),
+        scheduledAt: new Date(scheduledAt).toISOString(),
+        durationMinutes: Number(durationMinutes) || 60,
+      });
+      setTitle("");
+      setMeetingUrl("");
+      setScheduledAt("");
+      setDurationMinutes("60");
+      setShowAdd(false);
+      await refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!accessToken) return;
+    if (!confirm("Delete this live session?")) return;
+    await deleteLiveSession(accessToken, id);
+    await refresh();
+  }
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-ink">Live Sessions</h2>
+        <button
+          type="button"
+          onClick={() => setShowAdd((v) => !v)}
+          className="text-sm font-semibold text-teal hover:underline"
+        >
+          {showAdd ? "Cancel" : "+ Schedule Live Session"}
+        </button>
+      </div>
+      <p className="mt-1 text-xs text-ink/50">
+        Schedule a live class on Zoom, Google Meet, or any other video call link. Enrolled
+        students see a &ldquo;Join&rdquo; button on the course page once it&rsquo;s live.
+      </p>
+
+      {showAdd && (
+        <div className="mt-4 grid gap-3 border-t border-ink/10 pt-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Label htmlFor="live-title">Title</Label>
+            <Input id="live-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="live-url">Meeting link</Label>
+            <Input
+              id="live-url"
+              placeholder="https://meet.google.com/..."
+              value={meetingUrl}
+              onChange={(e) => setMeetingUrl(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="live-when">Date &amp; time</Label>
+            <Input
+              id="live-when"
+              type="datetime-local"
+              value={scheduledAt}
+              onChange={(e) => setScheduledAt(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="live-duration">Duration (minutes)</Label>
+            <Input
+              id="live-duration"
+              type="number"
+              min={5}
+              value={durationMinutes}
+              onChange={(e) => setDurationMinutes(e.target.value)}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <FormButton
+              onClick={handleAdd}
+              loading={saving}
+              disabled={!title.trim() || !meetingUrl.trim() || !scheduledAt}
+            >
+              Schedule
+            </FormButton>
+          </div>
+        </div>
+      )}
+
+      <ul className="mt-4 divide-y divide-ink/5">
+        {sessions?.map((session) => (
+          <li key={session._id} className="flex items-center justify-between py-3">
+            <div>
+              <p className="text-sm font-medium text-ink">{session.title}</p>
+              <p className="text-xs text-ink/50">
+                {new Date(session.scheduledAt).toLocaleString()} · {session.durationMinutes} min
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <a
+                href={session.meetingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-semibold text-teal hover:underline"
+              >
+                Open Link
+              </a>
+              <button
+                type="button"
+                onClick={() => handleDelete(session._id)}
+                className="text-xs font-semibold text-red-600 hover:underline"
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+        {sessions?.length === 0 && (
+          <li className="py-3 text-sm text-ink/40">No live sessions scheduled yet.</li>
+        )}
+      </ul>
+    </Card>
+  );
+}
+
+function DiscussionsSection({ courseId }: { courseId: string }) {
+  const { accessToken } = useAuth();
+  const [threads, setThreads] = useState<LmsForumThread[] | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!accessToken) return;
+    setThreads(await listThreadsForAdmin(accessToken, courseId));
+  }, [accessToken, courseId]);
+
+  useEffect(() => {
+    async function load() {
+      await refresh();
+    }
+    load();
+  }, [refresh]);
+
+  async function handleTogglePin(thread: LmsForumThread) {
+    if (!accessToken) return;
+    await setThreadPinned(accessToken, thread._id, !thread.pinned);
+    await refresh();
+  }
+
+  async function handleDelete(id: string) {
+    if (!accessToken) return;
+    if (!confirm("Delete this thread and all its replies?")) return;
+    await deleteThreadAsModerator(accessToken, id);
+    await refresh();
+  }
+
+  return (
+    <Card>
+      <h2 className="text-lg font-semibold text-ink">Discussions</h2>
+      <p className="mt-1 text-xs text-ink/50">
+        The discussion board enrolled students see on this course. Pin important threads or
+        remove ones that break the rules.
+      </p>
+      <ul className="mt-4 divide-y divide-ink/5">
+        {threads?.map((thread) => (
+          <li key={thread._id} className="flex items-center justify-between py-3">
+            <div>
+              <p className="text-sm font-medium text-ink">
+                {thread.pinned && "📌 "}
+                {thread.title}
+              </p>
+              <p className="text-xs text-ink/50">
+                {thread.author.name} · {thread.replyCount}{" "}
+                {thread.replyCount === 1 ? "reply" : "replies"} ·{" "}
+                {new Date(thread.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleTogglePin(thread)}
+                className="text-xs font-semibold text-teal hover:underline"
+              >
+                {thread.pinned ? "Unpin" : "Pin"}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(thread._id)}
+                className="text-xs font-semibold text-red-600 hover:underline"
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+        {threads?.length === 0 && (
+          <li className="py-3 text-sm text-ink/40">No discussions yet.</li>
+        )}
+      </ul>
+    </Card>
   );
 }
 

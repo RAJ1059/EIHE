@@ -42,13 +42,13 @@ export class AdminCoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
   @Get()
-  findAll(@Query() query: QueryCoursesDto) {
-    return this.coursesService.findAllForAdmin(query);
+  findAll(@Query() query: QueryCoursesDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.coursesService.findAllForAdmin(query, user);
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.coursesService.findByIdOrThrow(id);
+  findOne(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.coursesService.findByIdOrThrowForAdmin(id, user);
   }
 
   @Post()
@@ -62,7 +62,7 @@ export class AdminCoursesController {
     @Body() dto: UpdateCourseDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.coursesService.update(id, dto, user.role);
+    return this.coursesService.update(id, dto, user);
   }
 
   @Delete(":id")
@@ -72,13 +72,13 @@ export class AdminCoursesController {
   }
 
   @Post(":id/duplicate")
-  duplicate(@Param("id") id: string) {
-    return this.coursesService.duplicate(id);
+  duplicate(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.coursesService.duplicate(id, user);
   }
 
   @Put(":id/submit-for-review")
-  submitForReview(@Param("id") id: string) {
-    return this.coursesService.submitForReview(id);
+  submitForReview(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.coursesService.submitForReview(id, user);
   }
 
   @Put(":id/approve")

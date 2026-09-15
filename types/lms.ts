@@ -454,6 +454,47 @@ export type LmsFormSubmission = {
   updatedAt: string;
 };
 
+export type LmsLiveSession = {
+  _id: string;
+  course: string;
+  title: string;
+  description: string;
+  meetingUrl: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LmsForumAuthor = { _id: string; name: string };
+
+export type LmsForumThread = {
+  _id: string;
+  course: string;
+  author: LmsForumAuthor;
+  title: string;
+  body: string;
+  pinned: boolean;
+  replyCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LmsForumReply = {
+  _id: string;
+  thread: string;
+  author: LmsForumAuthor;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LmsForumThreadWithReplies = {
+  thread: Omit<LmsForumThread, "replyCount">;
+  replies: LmsForumReply[];
+};
+
 export type LmsPaginated<T> = {
   items: T[];
   pagination: {

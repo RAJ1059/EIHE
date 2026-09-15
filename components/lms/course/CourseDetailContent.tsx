@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { getCourseBySlug } from "@/lib/api/courses";
 import { getCurriculum } from "@/lib/api/lessons";
 import { enrollInFreeCourse, listMyEnrollments } from "@/lib/api/enrollments";
+import { listLiveSessionsForCourse } from "@/lib/api/live-sessions";
 import { ApiError } from "@/lib/api/client";
-import type { LmsCourse, LmsCurriculum } from "@/types/lms";
+import type { LmsCourse, LmsCurriculum, LmsLiveSession } from "@/types/lms";
 import { FormButton } from "@/components/lms/ui/FormButton";
 import { Card } from "@/components/lms/ui/Card";
 import { RichTextContent } from "@/components/lms/ui/RichTextContent";
@@ -15,6 +17,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useCart } from "@/lib/cart/CartContext";
 import { BrochureDownloadModal } from "@/components/lms/course/BrochureDownloadModal";
 import {
+  CalendarIcon,
   ChevronDownIcon,
   CheckIcon,
   ClockIcon,
@@ -530,6 +533,22 @@ export function CourseDetailContent({
               </div>
             </Card>
           )}
+
+          {isPortal && isEnrolled && (
+            <Card>
+              <p className="text-xs font-semibold tracking-wide text-ink/40 uppercase">
+                Community
+              </p>
+              <LiveSessionsPreview slug={course.slug} />
+              <Link
+                href={`/student/courses/${course.slug}/discussions`}
+                className="mt-4 flex items-center gap-2 text-sm font-semibold text-teal hover:underline"
+              >
+                <DocumentIcon className="h-4 w-4 shrink-0" />
+                Course Discussions
+              </Link>
+            </Card>
+          )}
         </aside>
       </div>
 
@@ -545,4 +564,80 @@ export function CourseDetailContent({
   );
 
   return isPortal ? body : <section className="bg-white">{body}</section>;
+}
+
+function LiveSessionsPreview({ slug }: { slug: string }) {
+  const { accessToken } = useAuth();
+  const [sessions, setSessions] = useState<LmsLiveSession[] | null>(null);
+  // Read via an effect, not inline during render — Date.now() is impure and
+  // this also lets the "live now" state update on its own while the page
+  // stays open, without a manual refresh.
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    listLiveSessionsForCourse(slug, accessToken)
+      .then((data) => {
+        if (!cancelled) setSessions(data);
+      })
+      .catch(() => {
+        if (!cancelled) setSessions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, accessToken]);
+
+  useEffect(() => {
+    // Deliberate post-mount read of the current time, same rationale as
+    // CartContext's post-mount localStorage read: this can only be known
+    // once mounted, and re-rendering once with the real value here is
+    // correct, not a state-sync anti-pattern.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNow(Date.now());
+    const interval = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!sessions || now === null) {
+    return <div className="mt-2 h-10 animate-pulse rounded-lg bg-cream" />;
+  }
+
+  const upcoming = sessions
+    .filter((s) => new Date(s.scheduledAt).getTime() + s.durationMinutes * 60_000 > now)
+    .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
+
+  if (!upcoming) {
+    return (
+      <p className="mt-2 flex items-center gap-2 text-sm text-ink/60">
+        <CalendarIcon className="h-4 w-4 shrink-0 text-ink/40" />
+        No upcoming live sessions
+      </p>
+    );
+  }
+
+  const startsAt = new Date(upcoming.scheduledAt).getTime();
+  const endsAt = startsAt + upcoming.durationMinutes * 60_000;
+  const isLive = now >= startsAt && now <= endsAt;
+
+  return (
+    <div className="mt-2">
+      <p className="flex items-center gap-2 text-sm font-medium text-ink">
+        <CalendarIcon className="h-4 w-4 shrink-0 text-teal" />
+        {upcoming.title}
+      </p>
+      <p className="mt-1 text-xs text-ink/50">{formatDateTime(upcoming.scheduledAt)}</p>
+      <a
+        href={upcoming.meetingUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          "mt-2 inline-flex items-center justify-center rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-transform hover:scale-[1.03] active:scale-[0.97]",
+          isLive ? "bg-red-600" : "bg-sage",
+        )}
+      >
+        {isLive ? "Join Now — Live" : "View Meeting Link"}
+      </a>
+    </div>
+  );
 }
